@@ -430,12 +430,13 @@ function wireControls(video){
   seekEl.addEventListener("pointercancel", endSeek);
   seekEl.addEventListener("lostpointercapture", endSeek);
 
-  /* tap video: CHỈ double-tap mép trái/phải mới tua ±10s.
-     Tap đơn mép = chỉ bật/tắt điều khiển, KHÔNG tua.
-     Tap giữa = play/pause ngay. */
+  /* tap video (desktop): CHỈ double-tap mép trái/phải mới tua ±10s.
+     Mobile tự xử lý bằng touch (xem khối gesture bên dưới), nên bỏ qua
+     click giả do touch sinh ra. */
   let lastTapT = 0, lastTapZone = "";
   video.addEventListener("click", e => {
     if (plSeeking) return;
+    if (Date.now() - lastTouchTap < 800) return;   // touch đã tự xử lý tap rồi
     const r = box.getBoundingClientRect();
     let zone = "mid";
     if (e.clientX - r.left < r.width / 3) zone = "left";
@@ -444,15 +445,11 @@ function wireControls(video){
     if (zone === "mid") { lastTapT = 0; lastTapZone = ""; togglePlay(); return; }
     if (zone === lastTapZone && now - lastTapT < 300) {
       lastTapT = 0; lastTapZone = "";
-      seekBy(zone === "left" ? -10 : 10);   // double-tap -> tua, tap tiếp vẫn cộng dồn
+      seekBy(zone === "left" ? -10 : 10);
       return;
     }
-    /* tap đơn mép: KHÔNG tua — chỉ hiện điều khiển */
     lastTapT = now; lastTapZone = zone;
-    const hidden = box.classList.contains("hide-ui");
-    box.classList.toggle("hide-ui", !hidden && !plVideo.paused ? false : !hidden);
-    clearTimeout(plHideTimer);
-    if (!hidden && plVideo && !plVideo.paused) plHideTimer = setTimeout(() => box.classList.add("hide-ui"), 2500);
+    showControls();
   });
 
   /* tốc độ phát */
@@ -498,13 +495,22 @@ function wireControls(video){
   video.addEventListener("volumechange", syncVol);
   syncVol();
 
-  /* fullscreen — iPhone/iPad phải dùng video.webkitEnterFullscreen() trực tiếp */
+  /* fullscreen — iPhone/iPad phải dùng video.webkitEnterFullscreen() trực tiếp;
+     Android: khóa xoay ngang sau khi vào fullscreen */
   const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent) ||
     (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  const lockLandscape = () => {
+    try {
+      if (screen.orientation && screen.orientation.lock) screen.orientation.lock("landscape").catch(() => {});
+    } catch {}
+  };
   if (!wireControls._fsBound) {
     wireControls._fsBound = true;
     document.addEventListener("fullscreenchange", () => {
       $("plFs").textContent = document.fullscreenElement ? "⛶" : "⛶";
+      if (!document.fullscreenElement) {
+        try { if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); } catch {}
+      }
     });
   }
   $("plFs").onclick = () => {
@@ -514,8 +520,12 @@ function wireControls(video){
       else if (video.webkitRequestFullscreen) video.webkitRequestFullscreen(); // iPadOS
       return;
     }
-    if (box.requestFullscreen) box.requestFullscreen();
-    else if (box.webkitRequestFullscreen) box.webkitRequestFullscreen();
+    if (box.requestFullscreen) {
+      const p = box.requestFullscreen();
+      if (p && p.then) p.then(lockLandscape).catch(() => {});
+      else lockLandscape();
+    }
+    else if (box.webkitRequestFullscreen) { box.webkitRequestFullscreen(); lockLandscape(); }
     else if (video.webkitEnterFullscreen) video.webkitEnterFullscreen();
   };
 
@@ -535,8 +545,15 @@ function wireControls(video){
     });
   }
 
-  /* vuốt mép trái: độ sáng | vuốt mép phải: âm lượng (mobile) */
-  let swActive = null, swStartY = 0, swStartVal = 0;
+  /* ===== GESTURE MOBILE — tự xử lý trên box vì nhiều trình duyệt mobile
+     không bắn 'click' trên <video> (đó là lý do tap giữa ko dừng được).
+     - Tap giữa: play/pause. Tap đơn mép: hiện điều khiển.
+     - Double-tap mép trái/phải: tua ∓10s.
+     - VuỐT DỌC trong 16% mép trái: độ sáng | mép phải: âm lượng.
+       Chỉ vuốt dọc mới kích hoạt — tap/vuốt ngang ở mép vẫn là tap/tua bình thường. */
+  let lastTouchTap = 0, tapT = 0, tapZone = "";
+  let tS = null, tMoved = false, swActive = null, swStartY = 0, swStartVal = 0;
+  const EDGE = 0.16;
   let bright = (() => { try { return parseFloat(localStorage.getItem("filmlo_bright") || "1") || 1; } catch { return 1; } })();
   const applyBright = () => {
     video.style.filter = bright >= 1 ? "" : `brightness(${bright})`;
@@ -548,40 +565,87 @@ function wireControls(video){
     el.classList.add("show");
     clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove("show"), 800);
   };
-  box.addEventListener("touchstart", e => {
-    if (!plVideo || $("playerBox").classList.contains("embed-mode")) return;
-    const t = e.touches[0];
+  const tp = e => e.touches[0] || e.changedTouches[0];
+  const zoneAt = x => {
     const r = box.getBoundingClientRect();
-    const x = t.clientX - r.left;
-    if (x < r.width * 0.26) { swActive = "bright"; }
-    else if (r.width - x < r.width * 0.26) { swActive = "vol"; }
-    else { swActive = null; return; }
-    e.preventDefault();
-    swStartY = t.clientY;
-    swStartVal = swActive === "bright" ? bright : (video.muted ? 0 : video.volume);
-    const side = swActive === "bright" ? $("plSideLeft") : $("plSideRight");
-    showSide(side);
-  }, { passive: false });
+    if (x - r.left < r.width / 3) return "left";
+    if (r.right - x < r.width / 3) return "right";
+    return "mid";
+  };
+  const handleTapAt = x => {
+    if (!plVideo || box.classList.contains("embed-mode")) return;
+    const zone = zoneAt(x);
+    const now = Date.now();
+    if (zone === "mid") { tapT = 0; tapZone = ""; togglePlay(); return; }
+    if (zone === tapZone && now - tapT < 300) {
+      tapT = 0; tapZone = "";
+      seekBy(zone === "left" ? -10 : 10);
+      return;
+    }
+    tapT = now; tapZone = zone;
+    showControls();
+  };
+
+  box.addEventListener("touchstart", e => {
+    if (!plVideo || box.classList.contains("embed-mode")) return;
+    const t = tp(e);
+    tS = { x: t.clientX, y: t.clientY, t: Date.now(), r: box.getBoundingClientRect() };
+    tMoved = false; swActive = null;
+  }, { passive: true });
+
   box.addEventListener("touchmove", e => {
-    if (!swActive) return;
-    e.preventDefault();
-    const t = e.touches[0];
-    const dy = (swStartY - t.clientY) / (box.getBoundingClientRect().height || 1);
-    let v = Math.max(0, Math.min(1, swStartVal + dy * 1.4));
-    if (swActive === "bright") {
-      v = Math.max(0.25, Math.min(1, v));          // độ sáng tối thiểu 25% để không "màn đen"
-      bright = v; applyBright();
-      $("plBrightVal").textContent = Math.round(v * 100) + "%";
-      showSide($("plSideLeft"));
-    } else {
-      video.muted = false; video.volume = v;
-      $("plVolFill").style.height = (v * 100) + "%";
-      $("plVolIcon").textContent = v > 0 ? "🔊" : "🔇";
-      $("plVolVal").textContent = Math.round(v * 100) + "%";
-      showSide($("plSideRight"));
+    if (!tS) return;
+    const t = tp(e);
+    const dx = t.clientX - tS.x, dy = t.clientY - tS.y;
+    if (swActive) {
+      /* đang vuốt dọc mép — tiếp tục cập nhật thanh sáng/tiếng */
+      e.preventDefault();
+      const dv = (swStartY - t.clientY) / (tS.r.height || 1);
+      let v = Math.max(0, Math.min(1, swStartVal + dv * 1.4));
+      if (swActive === "bright") {
+        v = Math.max(0.25, Math.min(1, v));
+        bright = v; applyBright();
+        $("plBrightVal").textContent = Math.round(v * 100) + "%";
+        showSide($("plSideLeft"));
+      } else {
+        plVideo.muted = false; plVideo.volume = v;
+        $("plVolFill").style.height = (v * 100) + "%";
+        $("plVolIcon").textContent = v > 0 ? "🔊" : "🔇";
+        $("plVolVal").textContent = Math.round(v * 100) + "%";
+        showSide($("plSideRight"));
+      }
+      return;
+    }
+    if (dy > 14 && Math.abs(dy) > Math.abs(dx) * 1.2) {
+      /* vuốt DỌC trong mép mới bật thanh sáng/tiếng */
+      const x0 = tS.x - tS.r.left;
+      if (x0 < tS.r.width * EDGE) { swActive = "bright"; }
+      else if (tS.r.width - x0 < tS.r.width * EDGE) { swActive = "vol"; }
+      if (swActive) {
+        e.preventDefault();
+        tMoved = true;
+        swStartY = tS.y;
+        swStartVal = swActive === "bright" ? bright : (plVideo.muted ? 0 : plVideo.volume);
+        showSide(swActive === "bright" ? $("plSideLeft") : $("plSideRight"));
+      }
+    } else if (Math.abs(dx) > 14) {
+      tMoved = true;   /* vuốt ngang -> không tính là tap */
     }
   }, { passive: false });
-  box.addEventListener("touchend", () => { swActive = null; });
+
+  box.addEventListener("touchend", e => {
+    if (!tS) return;
+    const dur = Date.now() - tS.t;
+    const moved = tMoved;
+    const t = tp(e);
+    const x = t ? t.clientX : tS.x;
+    tS = null;
+    if (swActive) { swActive = null; return; }   /* vừa vuốt -> không tính tap */
+    if (!moved && dur < 350) {
+      lastTouchTap = Date.now();
+      handleTapAt(x);
+    }
+  });
 
   /* nhớ vị trí xem dở: lưu mỗi 5s */
   clearInterval(plSaveTimer);
