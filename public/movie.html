@@ -120,6 +120,23 @@ main{max-width:1300px;margin:auto;padding:calc(70px + env(safe-area-inset-top)) 
 .pl-side .sval{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.7);color:#fff;font-size:12px;padding:3px 10px;border-radius:12px;white-space:nowrap}
 .pl-noep{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:14px;text-align:center;padding:20px}
 .pl-spacer{flex:1;min-height:35px}
+/* ===== KHÓA MÀN HÌNH (kiểu YouTube) ===== */
+/* khi khóa: ẩn toàn bộ điều khiển, chỉ còn nút mở khóa */
+.player-box.locked .pl-controls,
+.player-box.locked .pl-center,
+.player-box.locked .player-overlay,
+.player-box.locked .pl-fs-corner,
+.player-box.locked .pl-panel{opacity:0 !important;pointer-events:none !important}
+.player-box.locked .pl-btn{pointer-events:none}
+.pl-lockbtn{position:absolute;top:14px;left:14px;width:44px;height:44px;border-radius:50%;border:none;background:rgba(0,0,0,.55);color:#fff;font-size:19px;cursor:pointer;z-index:8;display:none;align-items:center;justify-content:center;line-height:1;opacity:0;pointer-events:none;transition:opacity .2s,background .15s;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.pl-lockbtn:active{background:rgba(0,0,0,.8)}
+.player-box.locked .pl-lockbtn{display:flex}
+/* ẩn hẳn khi khóa; chỉ hiện khi chạm màn hình 2s rồi lại ẩn */
+.player-box.locked .pl-lockbtn.reveal{opacity:1;pointer-events:auto}
+/* khóa luôn ẩn/hiện: chặn gesture tạo hiệu ứng "điện thoại rung" qua CSS đè lên */
+.player-box.locked video{pointer-events:none}
+/* nút khóa trên thanh điều khiển */
+.player-box .pl-btn[data-lock]{font-size:16px}
 
 /* episode panel */
 .ep-panel{display:flex;flex-direction:column;min-height:0}
@@ -260,6 +277,7 @@ h1{font-size:28px;margin-bottom:6px}
            <div class="pl-controls" id="plControls">
              <div class="pl-seek" id="plSeek"><div class="bar"><div class="pl-buffer" id="plBuffer"></div><div class="pl-progress" id="plProgress"></div><div class="pl-knob" id="plKnob"></div></div><div class="pl-tip" id="plTip">0:00</div></div>
              <div class="pl-row">
+               <button class="pl-btn" data-lock id="plLock" title="Khóa màn hình">🔒</button>
                <button class="pl-btn" id="plBack10" title="Lùi 10 giây">⏪</button>
                <button class="pl-btn" id="plPlay" title="Phát / Tạm dừng (Space)">▶</button>
                <button class="pl-btn" id="plFwd10" title="Tiến 10 giây">⏩</button>
@@ -287,6 +305,7 @@ h1{font-size:28px;margin-bottom:6px}
            <div class="pl-side right" id="plSideRight"><span class="si" id="plVolIcon">🔊</span><div class="sbar"><div class="sfill" id="plVolFill"></div></div><span class="sval" id="plVolVal"></span></div>
            <div class="pl-hint" id="plHint"></div>
            <button class="pl-fs-corner" id="plFsCorner" aria-label="Toàn màn hình">⛶</button>
+           <button class="pl-lockbtn" id="plUnlock" aria-label="Mở khóa màn hình">🔒</button>
          </div>
        </div>
        <p class="player-note">💡 Ưu tiên m3u8 (chất lượng gốc, player riêng). Mobile: bấm ⚙ để đổi tốc độ phát, tỷ lệ khung hình, chất lượng. Vuốt mép trái = độ sáng, vuốt mép phải = âm lượng. Link m3u8 lỗi thì bấm "Dự phòng".</p>
@@ -387,6 +406,11 @@ function destroyPlayer() {
   $("playerBox").classList.remove("hide-ui");
   $("plSideLeft").classList.remove("show");
   $("plSideRight").classList.remove("show");
+  plLocked = false;
+  clearTimeout(plLockTimer);
+  $("playerBox").classList.remove("locked");
+  $("plUnlock").classList.remove("reveal");
+  $("plLock").classList.remove("on");
 }
 function setOverlay(name, ep, mode) {
   $("poName").textContent = name || "";
@@ -402,6 +426,8 @@ function fmtTime(s){
 /* ----- custom control wiring (gắn 1 lần) ----- */
 let plVideo = null, plHideTimer = null, plSeeking = false, plSaveTimer = null;
 let plTouchingControls = false;      // đang chạm/giữ trên vùng điều khiển -> chưa tự ẩn
+let plLocked = false;                // khóa màn hình kiểu YouTube
+let plLockTimer = null;              // hẹn giờ ẩn nút mở khóa
 const PL_HIDE = 3000;                // tự ẩn thanh công cụ khi video đang phát
 const PL_HIDE_PAUSED = 4500;         // tự ẩn khi tạm dừng (giữ lâu hơn một chút)
 const RATES = [0.5, 0.75, 1, 1.25, 1.5, 2];
@@ -508,6 +534,7 @@ function renderSettings(){
 
 function posKey(){ return `filmlo_pos_${slug}_${currentEp?.name || ""}`; }
 function showControls(){
+  if (plLocked) return;                 // đang khóa: mọi thao tác chỉ hiện nút mở khóa
   const box = $("playerBox");
   box.classList.remove("hide-ui");
   clearTimeout(plHideTimer);
@@ -520,6 +547,49 @@ function showControls(){
   }, plVideo && plVideo.paused ? PL_HIDE_PAUSED : PL_HIDE);
 }
 function controlsHidden(){ return $("playerBox").classList.contains("hide-ui"); }
+/* ẩn thanh công cụ NGAY LẬP TỨC (tap vào khoảng trống lần 2) */
+function hideControlsNow(){
+  if (plLocked || !plVideo) return;
+  if (plSeeking || plTouchingControls || $("plSetPanel").classList.contains("show")) return;
+  clearTimeout(plHideTimer);
+  $("playerBox").classList.add("hide-ui");
+}
+/* ===== KHÓA / MỞ KHÓA MÀN HÌNH ===== */
+function setLandscape(on){
+  try {
+    if (screen.orientation && screen.orientation.lock) {
+      if (on) screen.orientation.lock("landscape").catch(() => {});
+      else screen.orientation.unlock();
+    }
+  } catch {}
+}
+function lockScreen(){
+  plLocked = true;
+  const box = $("playerBox");
+  closeSet();
+  clearTimeout(plHideTimer);
+  box.classList.add("locked", "hide-ui");
+  $("plLock").classList.add("on");
+  setLandscape(true);      // cố định xoay ngang (cần fullscreen trên đa số trình duyệt)
+  showHint("🔒 Đã khóa màn hình");
+}
+function unlockScreen(){
+  plLocked = false;
+  clearTimeout(plLockTimer);
+  $("playerBox").classList.remove("locked");
+  $("plUnlock").classList.remove("reveal");
+  $("plLock").classList.remove("on");
+  setLandscape(false);
+  showControls();
+  showHint("🔓 Đã mở khóa");
+}
+/* hiện nút mở khóa 2s rồi mờ đi — kiểu YouTube */
+function revealUnlock(){
+  const b = $("plUnlock");
+  b.classList.add("reveal");
+  clearTimeout(plLockTimer);
+  plLockTimer = setTimeout(() => b.classList.remove("reveal"), 2000);
+}
 function togglePlay(){
   if (!plVideo) return;
   plVideo.paused ? plVideo.play().catch(()=>{}) : plVideo.pause();
@@ -545,7 +615,12 @@ function wireControls(video){
   plVideo = video;
   const box = $("playerBox");
 
-  /* play/pause */
+  /* khóa / mở khóa màn hình — gắn 1 lần */
+  if (!plLock._bound) {
+    plLock._bound = true;
+    $("plLock").onclick = e => { e.stopPropagation(); lockScreen(); };
+    $("plUnlock").addEventListener("click", e => { e.stopPropagation(); unlockScreen(); });
+  }
   $("plPlay").onclick = togglePlay;
   $("plBig").onclick = togglePlay;
   video.addEventListener("play", () => {
@@ -619,10 +694,18 @@ function wireControls(video){
   /* desktop: rê chuột trong khung video là hiện lại thanh công cụ */
   let lastMoveAt = 0;
   box.addEventListener("mousemove", () => {
+    if (plLocked) return;                 // khóa: chỉ hiện nút mở khóa khi chạm
     const now = Date.now();
     if (now - lastMoveAt < 250) return;
     lastMoveAt = now;
     showControls();
+  });
+  /* khóa: bấm/chạm bất kỳ vào khung video đều hiện nút mở khóa 2s */
+  box.addEventListener("click", e => {
+    if (!plLocked) return;
+    if (e.target.closest && e.target.closest("#plUnlock")) return;   // nút tự xử lý
+    e.stopPropagation();
+    revealUnlock();
   });
 
   /* tap video (desktop): CHỈ double-tap mép trái/phải mới tua ±10s.
@@ -630,14 +713,18 @@ function wireControls(video){
      click giả do touch sinh ra. */
   let lastTapT = 0, lastTapZone = "";
   video.addEventListener("click", e => {
-    if (plSeeking) return;
+    if (plSeeking || plLocked) return;
     if (Date.now() - lastTouchTap < 800) return;   // touch đã tự xử lý tap rồi
     const r = box.getBoundingClientRect();
     let zone = "mid";
     if (e.clientX - r.left < r.width / 3) zone = "left";
     else if (r.right - e.clientX < r.width / 3) zone = "right";
     const now = Date.now();
-    if (zone === "mid") { lastTapT = 0; lastTapZone = ""; togglePlay(); return; }
+    if (zone === "mid") { lastTapT = 0; lastTapZone = "";
+      /* desktop: tap giữa cũng bật/tắt thanh công cụ ngay */
+      if (controlsHidden()) showControls(); else hideControlsNow();
+      return;
+    }
     if (zone === lastTapZone && now - lastTapT < 300) {
       lastTapT = 0; lastTapZone = "";
       buzz(12);
@@ -750,6 +837,10 @@ function wireControls(video){
     document.addEventListener("keydown", e => {
       if (e.target.tagName === "INPUT") return;
       if ($("playerBox").classList.contains("embed-mode")) return;
+      if (plLocked) {                       // khóa: chỉ cho mở khóa bằng Escape
+        if (e.key === "Escape") unlockScreen();
+        return;
+      }
       if (e.key === " "){ e.preventDefault(); togglePlay(); }
       else if (e.key === "ArrowLeft") seekBy(-10);
       else if (e.key === "ArrowRight") seekBy(10);
@@ -791,6 +882,8 @@ function wireControls(video){
   };
   const handleTapAt = x => {
     if (!plVideo || box.classList.contains("embed-mode")) return;
+    /* đang khóa: chạm bất kỳ chỉ hiện nút mở khóa 2s (kiểu YouTube) */
+    if (plLocked) { revealUnlock(); return; }
     const zone = zoneAt(x);
     const now = Date.now();
     /* double-tap mép trái/phải: tua ∓10s — chạy được cả khi thanh công cụ đang ẩn */
@@ -801,18 +894,16 @@ function wireControls(video){
       showControls();
       return;
     }
-    /* thanh công cụ đang ẩn -> chạm chỉ để hiện thanh (chuẩn player mobile:
-       không vô tình tạm dừng video). Chạm tiếp mới phát/dừng. */
-    if (controlsHidden()) { tapT = now; tapZone = zone; showControls(); return; }
-    if (zone === "mid") { tapT = 0; tapZone = ""; togglePlay(); return; }
-    tapT = now; tapZone = zone;
-    showControls();
+    /* tap 1 lần vào khoảng trống: bật/tắt thanh công cụ NGAY (không đợi auto-hide) */
+    tapT = 0; tapZone = "";
+    if (controlsHidden()) showControls();
+    else hideControlsNow();
   };
 
   box.addEventListener("touchstart", e => {
     if (!plVideo || box.classList.contains("embed-mode")) return;
-    /* bảng cài đặt / thanh âm lượng đang mở: để chúng tự xử lý (scroll, kéo) */
-    if (e.target.closest && e.target.closest(".pl-panel,.pl-vol-pop")) { tS = null; return; }
+    /* nút mở khóa / bảng cài đặt / thanh âm lượng: để chúng tự xử lý */
+    if (e.target.closest && e.target.closest("#plUnlock,.pl-panel,.pl-vol-pop")) { tS = null; return; }
     const t = tp(e);
     const rect = box.getBoundingClientRect();
     tS = {
@@ -826,6 +917,7 @@ function wireControls(video){
 
   box.addEventListener("touchmove", e => {
     if (!tS) return;
+    if (plLocked) return;   // khóa: không cho vuốt sáng/tiếng (tap vẫn qua touchend)
     const t = tp(e);
     const dx = t.clientX - tS.x, dy = t.clientY - tS.y;
     if (swActive) {
