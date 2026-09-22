@@ -14,22 +14,25 @@
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);color:var(--text);font-family:"Segoe UI",system-ui,Arial,sans-serif}
 
-header{background:rgba(11,15,23,.94);border-bottom:1px solid var(--border);padding:13px 24px;position:fixed;top:0;left:0;width:100%;box-sizing:border-box;z-index:60;backdrop-filter:blur(10px)}
+header{background:rgba(11,15,23,.96);border-bottom:1px solid var(--border);padding:calc(13px + env(safe-area-inset-top)) 24px 13px;position:fixed;top:0;left:0;width:100%;box-sizing:border-box;z-index:60;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
 .top{max-width:1300px;margin:auto;display:flex;align-items:center;gap:16px}
 .logo{font-size:20px;font-weight:800;background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent;text-decoration:none}
 .back{margin-left:auto;color:var(--muted);text-decoration:none;font-size:13px;border:1px solid var(--border);padding:8px 14px;border-radius:8px}
 .back:hover{color:var(--text);border-color:var(--accent)}
 
-main{max-width:1300px;margin:auto;padding:70px 24px 24px}
+main{max-width:1300px;margin:auto;padding:calc(70px + env(safe-area-inset-top)) 24px calc(24px + env(safe-area-inset-bottom))}
 
 .card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:18px}
 
 /* ===== PLAYER + EPISODE CARD ===== */
 .watch-card{display:grid;grid-template-columns:1fr 320px;gap:18px}
 .player-shell{position:relative;border-radius:14px;padding:2px;background:linear-gradient(135deg,rgba(99,102,241,.55),rgba(168,85,247,.35),rgba(99,102,241,.15));box-shadow:0 20px 55px rgba(0,0,0,.55)}
-.player-box{position:relative;width:100%;aspect-ratio:16/9;background:#000;border-radius:12px;overflow:hidden}
+.player-box{position:relative;width:100%;aspect-ratio:16/9;background:#000;border-radius:12px;overflow:hidden;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none}
 .player-box video,.player-box iframe{width:100%;height:100%;border:none;display:block}
-.player-overlay{position:absolute;top:0;left:0;right:0;padding:12px 16px;background:linear-gradient(rgba(0,0,0,.6),transparent);display:flex;justify-content:space-between;gap:10px;pointer-events:none;transition:.3s}
+/* lớp phủ làm mờ (độ sáng) — rẻ hơn filter:brightness() rất nhiều trên mobile */
+.pl-dim{position:absolute;inset:0;background:#000;opacity:0;pointer-events:none;z-index:1;transition:opacity .12s linear}
+.player-box.dragging .pl-dim{transition:none}
+.player-overlay{position:absolute;top:0;left:0;right:0;padding:12px 16px;background:linear-gradient(rgba(0,0,0,.6),transparent);display:flex;justify-content:space-between;gap:10px;pointer-events:none;transition:.3s;z-index:2}
 .player-box.hide-ui .player-overlay{opacity:0}
 .player-overlay .po-name{font-size:14px;font-weight:600;text-shadow:0 1px 4px rgba(0,0,0,.8);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .player-overlay .po-ep{font-size:12px;color:#cbd5f5;text-shadow:0 1px 4px rgba(0,0,0,.8);flex-shrink:0}
@@ -74,7 +77,7 @@ main{max-width:1300px;margin:auto;padding:70px 24px 24px}
 @media(hover:none){
   .pl-vol-pop{display:none}
 }
-/* bảng cài đặt ⚙: tốc độ phát / tỷ lệ khung hình / chất lượng / mạch chủ */
+/* bảng cài đặt ⚙: tốc độ phát / tỷ lệ khung hình / chất lượng */
 .pl-set{position:relative;display:flex;align-items:center}
 /* bảng cài đặt: nổi phía trên hàng nút (106px ≈ chiều cao .pl-controls + 9px khe) */
 .pl-panel{position:absolute;bottom:106px;right:14px;min-width:244px;max-width:calc(100vw - 26px);background:rgba(10,14,22,.97);border:1px solid var(--border);border-radius:12px;padding:6px;display:none;z-index:12;backdrop-filter:blur(8px);box-shadow:0 18px 45px rgba(0,0,0,.6)}
@@ -176,7 +179,7 @@ h1{font-size:28px;margin-bottom:6px}
   .detail{flex-direction:column}
   .poster{width:170px}
   h1{font-size:23px}
-  main{padding:70px 10px 16px}
+  main{padding:calc(70px + env(safe-area-inset-top)) 10px calc(16px + env(safe-area-inset-bottom))}
   .card{padding:13px}
   .player-top{gap:6px}
   .player-top h3{font-size:13.5px}
@@ -202,6 +205,12 @@ h1{font-size:28px;margin-bottom:6px}
 .player-box.embed-mode .pl-fs-corner{display:none !important}
 /* CSS-fullscreen dự phòng cho trình duyệt không hỗ trợ Fullscreen API */
 .player-box.fake-fs{position:fixed;top:0;left:0;width:100vw;height:100vh;max-width:none;border-radius:0;z-index:9999}
+/* an toàn tai thỏ / thanh home khi toàn màn hình (mobile nằm ngang) */
+.player-box.fake-fs .pl-controls,
+.player-box:fullscreen .pl-controls{padding-bottom:calc(8px + env(safe-area-inset-bottom));padding-left:calc(12px + env(safe-area-inset-left));padding-right:calc(12px + env(safe-area-inset-right))}
+.player-box.fake-fs .pl-fs-corner,
+.player-box:fullscreen .pl-fs-corner{top:calc(8px + env(safe-area-inset-top));right:calc(8px + env(safe-area-inset-right))}
+.player-box:-webkit-full-screen .pl-controls{padding-bottom:calc(8px + env(safe-area-inset-bottom));padding-left:calc(12px + env(safe-area-inset-left));padding-right:calc(12px + env(safe-area-inset-right))}
 @media(max-width:700px){
   .pl-fs-corner{display:flex}
   .pl-time{font-size:10.5px;flex-shrink:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
@@ -242,6 +251,7 @@ h1{font-size:28px;margin-bottom:6px}
        </div>
        <div class="player-shell">
          <div class="player-box" id="playerBox">
+           <div class="pl-dim" id="plDim"></div>
            <div class="player-overlay">
              <span class="po-name" id="poName"></span>
              <span class="po-ep" id="poEp"></span>
@@ -279,7 +289,7 @@ h1{font-size:28px;margin-bottom:6px}
            <button class="pl-fs-corner" id="plFsCorner" aria-label="Toàn màn hình">⛶</button>
          </div>
        </div>
-       <p class="player-note">💡 Ưu tiên m3u8 (chất lượng gốc, player riêng). Mobile: bấm ⚙ để đổi tốc độ phát, tỷ lệ khung hình, chất lượng, mạch chủ. Vuốt mép trái = độ sáng, vuốt mép phải = âm lượng. Link m3u8 lỗi thì bấm "Dự phòng".</p>
+       <p class="player-note">💡 Ưu tiên m3u8 (chất lượng gốc, player riêng). Mobile: bấm ⚙ để đổi tốc độ phát, tỷ lệ khung hình, chất lượng. Vuốt mép trái = độ sáng, vuốt mép phải = âm lượng. Link m3u8 lỗi thì bấm "Dự phòng".</p>
        <p id="playerErr" class="err"></p>
      </div>
 
@@ -361,17 +371,19 @@ const cleanUrl = u => {
 /* ================= HLS PLAYER (custom controls) ================= */
 function destroyPlayer() {
   if (hls) { try { hls.destroy(); } catch{} hls = null; }
-  /* chất lượng + mạch chủ thuộc về instance HLS cũ -> xoá khi đổi tập/chế độ */
-  plLevels = []; plAudios = []; plQuality = -1; plAudio = 0;
+  /* chất lượng thuộc về instance HLS cũ -> xoá khi đổi tập/chế độ */
+  plLevels = []; plQuality = -1;
   closeSet();
   $("plPip").classList.remove("on");
   $("plPip").style.display = "none";
   clearInterval(plSaveTimer);          // dừng lưu vị trí khi rời chế độ video
   plVideo = null;
+  plTouchingControls = false;
+  $("plDim").style.opacity = "0";      // đèn mờ chỉ áp cho video, không áp cho iframe embed
+  $("playerBox").classList.remove("dragging");
   [...$("playerBox").querySelectorAll("video,iframe,.pl-noep")].forEach(el => el.remove());
   $("playerErr").style.display = "none";
   $("plCenter").classList.remove("hide");
-  $("plControls").style.opacity = "1";
   $("playerBox").classList.remove("hide-ui");
   $("plSideLeft").classList.remove("show");
   $("plSideRight").classList.remove("show");
@@ -389,6 +401,9 @@ function fmtTime(s){
 
 /* ----- custom control wiring (gắn 1 lần) ----- */
 let plVideo = null, plHideTimer = null, plSeeking = false, plSaveTimer = null;
+let plTouchingControls = false;      // đang chạm/giữ trên vùng điều khiển -> chưa tự ẩn
+const PL_HIDE = 3000;                // tự ẩn thanh công cụ khi video đang phát
+const PL_HIDE_PAUSED = 4500;         // tự ẩn khi tạm dừng (giữ lâu hơn một chút)
 const RATES = [0.5, 0.75, 1, 1.25, 1.5, 2];
 /* tỷ lệ khung hình — mỗi mục gắn 1 class lên .player-box */
 const RATIOS = [
@@ -401,24 +416,20 @@ const RATIOS = [
 const SET_ICON = {
   speed: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 1.8"/></svg>',
   ratio: '<svg viewBox="0 0 24 24"><rect x="3" y="5.5" width="18" height="13" rx="2.5"/></svg>',
-  quality: '<svg viewBox="0 0 24 24"><path d="M4 7.5h16M4 12h11.5M4 16.5h7.5"/></svg>',
-  audio: '<svg viewBox="0 0 24 24"><path d="M5 10v4M9.5 6.5v11M14 9v6M18.5 4.5v15"/></svg>'
+  quality: '<svg viewBox="0 0 24 24"><path d="M4 7.5h16M4 12h11.5M4 16.5h7.5"/></svg>'
 };
-const SET_TITLE = { speed: "Tốc độ phát", ratio: "Tỷ lệ khung hình", quality: "Chất lượng", audio: "Mạch chủ" };
+const SET_TITLE = { speed: "Tốc độ phát", ratio: "Tỷ lệ khung hình", quality: "Chất lượng" };
 
 /* trạng thái cài đặt (tốc độ + tỷ lệ được nhớ qua localStorage) */
 let plRate = (() => { const r = parseFloat(localStorage.getItem("filmlo_rate") || "1"); return RATES.includes(r) ? r : 1; })();
 let plRatio = (() => { const r = localStorage.getItem("filmlo_ratio") || "default"; return RATIOS.some(x => x.id === r) ? r : "default"; })();
 let plLevels = [];    // hls.levels      -> [{ index, label }]
-let plAudios = [];    // hls.audioTracks -> [{ index, label }]
 let plQuality = -1;   // -1 = Auto (tự chọn theo băng thông)
-let plAudio = 0;
-let plSetView = "";   // "" = bảng chính | "speed" | "ratio" | "quality" | "audio"
+let plSetView = "";   // "" = bảng chính | "speed" | "ratio" | "quality"
 
 const rateLabel = r => r === 1 ? "Bình thường" : r + "x";
 const ratioLabel = id => (RATIOS.find(x => x.id === id) || RATIOS[0]).label;
 const qualityLabel = () => plQuality < 0 ? "Auto" : (plLevels[plQuality]?.label || "Auto");
-const audioLabel = () => plAudios[plAudio]?.label || "Mặc định";
 
 function applyRate(){
   if (plVideo) plVideo.playbackRate = plRate;
@@ -434,20 +445,19 @@ function setQuality(i){
   plQuality = i;
   if (hls) hls.currentLevel = i;
 }
-function setAudio(i){
-  plAudio = i;
-  if (hls && typeof hls.audioTrack === "number") hls.audioTrack = i;
-}
 function closeSet(){
+  const wasOpen = $("plSetPanel").classList.contains("show");
   plSetView = "";
   $("plSetPanel").classList.remove("show", "sub");
   $("plSetBtn").classList.remove("on");
+  if (wasOpen) showControls();
 }
 function openSet(view){
   plSetView = view || "";
   renderSettings();
   $("plSetPanel").classList.add("show");
   $("plSetBtn").classList.add("on");
+  showControls();
 }
 function renderSettings(){
   const list = $("plSetList");
@@ -460,7 +470,6 @@ function renderSettings(){
     rows.push({ ic: "speed", label: "Tốc độ phát", value: rateLabel(plRate), next: "speed" });
     rows.push({ ic: "ratio", label: "Tỷ lệ khung hình", value: ratioLabel(plRatio), next: "ratio" });
     if (plLevels.length) rows.push({ ic: "quality", label: "Chất lượng", value: qualityLabel(), next: "quality" });
-    rows.push({ ic: "audio", label: "Mạch chủ", value: audioLabel(), next: "audio" });
   } else if (view === "speed") {
     RATES.forEach(r => rows.push({
       label: rateLabel(r), sel: r === plRate,
@@ -475,11 +484,6 @@ function renderSettings(){
     rows.push({ label: "Auto", sel: plQuality < 0, act() { setQuality(-1); } });
     plLevels.forEach(l => rows.push({
       label: l.label, sel: plQuality === l.index, act() { setQuality(l.index); }
-    }));
-  } else if (view === "audio") {
-    if (!plAudios.length) rows.push({ label: "Mặc định", sel: true, act() {} });
-    plAudios.forEach(t => rows.push({
-      label: t.label, sel: plAudio === t.index, act() { setAudio(t.index); }
     }));
   }
   list.innerHTML = "";
@@ -504,12 +508,18 @@ function renderSettings(){
 
 function posKey(){ return `filmlo_pos_${slug}_${currentEp?.name || ""}`; }
 function showControls(){
-  $("playerBox").classList.remove("hide-ui");
+  const box = $("playerBox");
+  box.classList.remove("hide-ui");
   clearTimeout(plHideTimer);
   plHideTimer = setTimeout(() => {
-    if (plVideo && !plVideo.paused) $("playerBox").classList.add("hide-ui");
-  }, 2500);
+    /* không tự ẩn khi: chưa có video, chế độ embed, đang kéo thanh tua,
+       đang mở bảng cài đặt, hoặc đang chạm giữ trên vùng điều khiển */
+    if (!plVideo || box.classList.contains("embed-mode")) return;
+    if (plSeeking || plTouchingControls || $("plSetPanel").classList.contains("show")) return;
+    box.classList.add("hide-ui");
+  }, plVideo && plVideo.paused ? PL_HIDE_PAUSED : PL_HIDE);
 }
+function controlsHidden(){ return $("playerBox").classList.contains("hide-ui"); }
 function togglePlay(){
   if (!plVideo) return;
   plVideo.paused ? plVideo.play().catch(()=>{}) : plVideo.pause();
@@ -523,6 +533,8 @@ function showHint(txt){
   const h = $("plHint"); h.textContent = txt; h.classList.add("show");
   clearTimeout(h._t); h._t = setTimeout(() => h.classList.remove("show"), 700);
 }
+/* rung nhẹ khi tua nhanh (Android hỗ trợ, iOS bỏ qua) */
+function buzz(ms){ try { if (navigator.vibrate) navigator.vibrate(ms); } catch {} }
 function savePos(){
   try {
     if (plVideo && plVideo.currentTime > 10)
@@ -540,8 +552,7 @@ function wireControls(video){
     $("plPlay").textContent = "❚❚"; $("plCenter").classList.add("hide"); showControls();
   });
   video.addEventListener("pause", () => {
-    $("plPlay").textContent = "▶"; $("plCenter").classList.remove("hide");
-    $("playerBox").classList.remove("hide-ui");
+    $("plPlay").textContent = "▶"; $("plCenter").classList.remove("hide"); showControls();
   });
   video.addEventListener("ended", () => { try{localStorage.removeItem(posKey());}catch{}; playNextEp(); });
 
@@ -587,16 +598,32 @@ function wireControls(video){
   seekEl.addEventListener("pointerdown", e => {
     plSeeking = true; seekEl.classList.add("dragging");
     try { seekEl.setPointerCapture(e.pointerId); } catch{}
+    showControls();
     seekTo(e); tipAt(e);
   });
   seekEl.addEventListener("pointermove", e => {
     if (!plSeeking) return;
     seekTo(e); tipAt(e);
   });
-  const endSeek = () => { plSeeking = false; seekEl.classList.remove("dragging"); };
+  const endSeek = () => { plSeeking = false; seekEl.classList.remove("dragging"); showControls(); };
   seekEl.addEventListener("pointerup", endSeek);
   seekEl.addEventListener("pointercancel", endSeek);
   seekEl.addEventListener("lostpointercapture", endSeek);
+
+  /* chạm/giữ trên vùng điều khiển: giữ thanh công cụ, không tự ẩn giữa chừng */
+  const ctr = $("plControls");
+  ctr.addEventListener("touchstart", () => { plTouchingControls = true; showControls(); }, { passive: true });
+  const endTouchCtr = () => { plTouchingControls = false; showControls(); };
+  ctr.addEventListener("touchend", endTouchCtr);
+  ctr.addEventListener("touchcancel", endTouchCtr);
+  /* desktop: rê chuột trong khung video là hiện lại thanh công cụ */
+  let lastMoveAt = 0;
+  box.addEventListener("mousemove", () => {
+    const now = Date.now();
+    if (now - lastMoveAt < 250) return;
+    lastMoveAt = now;
+    showControls();
+  });
 
   /* tap video (desktop): CHỈ double-tap mép trái/phải mới tua ±10s.
      Mobile tự xử lý bằng touch (xem khối gesture bên dưới), nên bỏ qua
@@ -613,6 +640,7 @@ function wireControls(video){
     if (zone === "mid") { lastTapT = 0; lastTapZone = ""; togglePlay(); return; }
     if (zone === lastTapZone && now - lastTapT < 300) {
       lastTapT = 0; lastTapZone = "";
+      buzz(12);
       seekBy(zone === "left" ? -10 : 10);
       return;
     }
@@ -744,7 +772,8 @@ function wireControls(video){
   const EDGE = 0.16;
   let bright = (() => { try { return parseFloat(localStorage.getItem("filmlo_bright") || "1") || 1; } catch { return 1; } })();
   const applyBright = () => {
-    video.style.filter = bright >= 1 ? "" : `brightness(${bright})`;
+    /* dùng lớp phủ đen mờ dần thay cho filter:brightness() — mượt hơn nhiều khi vuốt */
+    $("plDim").style.opacity = String(Math.max(0, Math.min(0.85, 1 - bright)));
     $("plBrightFill").style.height = (bright * 100) + "%";
     try { localStorage.setItem("filmlo_bright", String(bright)); } catch {}
   };
@@ -764,12 +793,18 @@ function wireControls(video){
     if (!plVideo || box.classList.contains("embed-mode")) return;
     const zone = zoneAt(x);
     const now = Date.now();
-    if (zone === "mid") { tapT = 0; tapZone = ""; togglePlay(); return; }
-    if (zone === tapZone && now - tapT < 300) {
+    /* double-tap mép trái/phải: tua ∓10s — chạy được cả khi thanh công cụ đang ẩn */
+    if (zone !== "mid" && zone === tapZone && now - tapT < 300) {
       tapT = 0; tapZone = "";
+      buzz(12);
       seekBy(zone === "left" ? -10 : 10);
+      showControls();
       return;
     }
+    /* thanh công cụ đang ẩn -> chạm chỉ để hiện thanh (chuẩn player mobile:
+       không vô tình tạm dừng video). Chạm tiếp mới phát/dừng. */
+    if (controlsHidden()) { tapT = now; tapZone = zone; showControls(); return; }
+    if (zone === "mid") { tapT = 0; tapZone = ""; togglePlay(); return; }
     tapT = now; tapZone = zone;
     showControls();
   };
@@ -779,7 +814,13 @@ function wireControls(video){
     /* bảng cài đặt / thanh âm lượng đang mở: để chúng tự xử lý (scroll, kéo) */
     if (e.target.closest && e.target.closest(".pl-panel,.pl-vol-pop")) { tS = null; return; }
     const t = tp(e);
-    tS = { x: t.clientX, y: t.clientY, t: Date.now(), r: box.getBoundingClientRect() };
+    const rect = box.getBoundingClientRect();
+    tS = {
+      x: t.clientX, y: t.clientY, t: Date.now(), r: rect,
+      /* quãng trượt để đi hết dải: tối thiểu 60% chiều cao màn hình -> trên điện thoại
+         (khung 16:9 thấp) kéo sáng/tiếng vẫn êm, không nhảy */
+      ref: Math.max(rect.height, window.innerHeight * 0.6)
+    };
     tMoved = false; swActive = null;
   }, { passive: true });
 
@@ -788,10 +829,10 @@ function wireControls(video){
     const t = tp(e);
     const dx = t.clientX - tS.x, dy = t.clientY - tS.y;
     if (swActive) {
-      /* đang vuốt dọc mép — tiếp tục cập nhật thanh sáng/tiếng */
+      /* đang vuốt dọc mép — cập nhật mượt theo mốc kích hoạt (không nhảy giá trị) */
       e.preventDefault();
-      const dv = (swStartY - t.clientY) / (tS.r.height || 1);
-      let v = Math.max(0, Math.min(1, swStartVal + dv * 1.4));
+      const dv = (swStartY - t.clientY) / tS.ref;
+      let v = Math.max(0, Math.min(1, swStartVal + dv));
       if (swActive === "bright") {
         v = Math.max(0.25, Math.min(1, v));
         bright = v; applyBright();
@@ -806,17 +847,21 @@ function wireControls(video){
       }
       return;
     }
-    if (dy > 14 && Math.abs(dy) > Math.abs(dx) * 1.2) {
-      /* vuốt DỌC trong mép mới bật thanh sáng/tiếng */
+    /* ngưỡng nhỏ + chặn cuộn ngay ở touchmove đầu tiên -> trình duyệt không "cướp"
+       thao tác, độ sáng/âm lượng chạy 1:1 theo ngón tay */
+    if (Math.abs(dy) > 6 && Math.abs(dy) > Math.abs(dx) * 1.15) {
       const x0 = tS.x - tS.r.left;
-      if (x0 < tS.r.width * EDGE) { swActive = "bright"; }
-      else if (tS.r.width - x0 < tS.r.width * EDGE) { swActive = "vol"; }
+      if (x0 < tS.r.width * EDGE) swActive = "bright";
+      else if (tS.r.width - x0 < tS.r.width * EDGE) swActive = "vol";
       if (swActive) {
         e.preventDefault();
         tMoved = true;
-        swStartY = tS.y;
+        /* lấy mốc NGAY TẠI điểm kích hoạt -> không bị giật khi bắt đầu vuốt */
+        swStartY = t.clientY;
         swStartVal = swActive === "bright" ? bright : (plVideo.muted ? 0 : plVideo.volume);
+        box.classList.add("dragging");
         showSide(swActive === "bright" ? $("plSideLeft") : $("plSideRight"));
+        showControls();
       }
     } else if (Math.abs(dx) > 14) {
       tMoved = true;   /* vuốt ngang -> không tính là tap */
@@ -830,6 +875,7 @@ function wireControls(video){
     const t = tp(e);
     const x = t ? t.clientX : tS.x;
     tS = null;
+    box.classList.remove("dragging");
     /* chạm trong bảng cài đặt / thanh âm lượng -> không tính là tap lên video */
     if (e.target.closest && e.target.closest(".pl-panel,.pl-vol-pop")) { swActive = null; return; }
     if (swActive) { swActive = null; return; }   /* vừa vuốt -> không tính tap */
@@ -837,6 +883,10 @@ function wireControls(video){
       lastTouchTap = Date.now();
       handleTapAt(x);
     }
+  });
+  /* trình duyệt cướp thao tác (bắt đầu cuộn trang) -> dọn trạng thái, tránh kẹt */
+  box.addEventListener("touchcancel", () => {
+    tS = null; swActive = null; box.classList.remove("dragging");
   });
 
   /* nhớ vị trí xem dở: lưu mỗi 5s */
@@ -902,14 +952,11 @@ function playDirect(urlRaw) {
   hls.loadSource(url);
   hls.attachMedia(video);
   hls.on(Hls.Events.MANIFEST_PARSED, () => {
-    /* nạp danh sách chất lượng + mạch chủ cho bảng cài đặt ⚙ */
+    /* nạp danh sách chất lượng cho bảng cài đặt ⚙ */
     plLevels = (hls.levels || []).map((l, i) => ({
       index: i, label: l.height ? l.height + "p" : (l.name || "Chất lượng " + (i + 1))
     }));
-    plAudios = (hls.audioTracks || []).map((t, i) => ({
-      index: i, label: t.name || t.lang || ("Mạch " + (i + 1))
-    }));
-    plQuality = -1; plAudio = 0;
+    plQuality = -1;
     applyRate();
     renderSettings();
     video.play().catch(() => {});
@@ -1103,7 +1150,7 @@ async function loadRelated(m) {
 }
 
 /* ================= INIT ================= */
-/* bảng cài đặt ⚙: tốc độ phát / tỷ lệ khung hình / chất lượng / mạch chủ */
+/* bảng cài đặt ⚙: tốc độ phát / tỷ lệ khung hình / chất lượng */
 applyRatio();
 renderSettings();
 $("plSetBtn").onclick = e => {
@@ -1113,6 +1160,7 @@ $("plSetBtn").onclick = e => {
 $("plSetBack").onclick = e => { e.stopPropagation(); openSet(""); };
 document.addEventListener("click", e => { if (!e.target.closest(".pl-set,.pl-panel")) closeSet(); });
 
+/* thanh Filmlo luôn cố định trên đầu trang */
 $("switchMode").onclick = switchMode;
 $("prevEp").onclick = playPrevEp;
 $("nextEp").onclick = playNextEp;

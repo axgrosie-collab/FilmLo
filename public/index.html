@@ -14,7 +14,7 @@
 body{background:var(--bg);color:var(--text);font-family:"Segoe UI",system-ui,Arial,sans-serif}
 a{color:inherit}
 
-header{background:rgba(11,15,23,.92);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50;backdrop-filter:blur(10px)}
+header{background:rgba(11,15,23,.94);border-bottom:1px solid var(--border);position:fixed;top:0;left:0;width:100%;box-sizing:border-box;z-index:50;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);padding-top:env(safe-area-inset-top)}
 .top{max-width:1300px;margin:auto;padding:14px 24px;display:flex;align-items:center;gap:24px}
 .logo{font-size:22px;font-weight:800;text-decoration:none;background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent}
 nav{display:flex;gap:4px}
@@ -35,7 +35,7 @@ nav a.active{color:var(--text);background:var(--surface2);font-weight:600}
 .sg-item .s{font-size:11.5px;color:var(--muted);margin-top:2px}
 .sg-empty{padding:16px;text-align:center;color:var(--muted);font-size:13px}
 
-.hero{max-width:1300px;margin:auto;padding:26px 24px 8px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.hero{max-width:1300px;margin:auto;padding:calc(26px + 74px + env(safe-area-inset-top)) 24px 8px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
 .hero h1{font-size:22px}
 .hero .count{font-size:12.5px;color:var(--muted)}
 
@@ -76,7 +76,7 @@ nav a.active{color:var(--text);background:var(--surface2);font-weight:600}
   nav{overflow-x:auto;width:100%;order:2;-webkit-overflow-scrolling:touch;scrollbar-width:none}
   nav::-webkit-scrollbar{display:none}
   nav a{padding:8px 11px;font-size:13px}
-  .hero{padding:18px 14px 4px;gap:10px}
+  .hero{padding:calc(18px + 118px + env(safe-area-inset-top)) 14px 4px;gap:10px}
   .hero h1{font-size:18px}
   .btn-ghost{margin-left:auto;padding:8px 12px;font-size:12.5px}
   .filter-panel{margin:10px 14px 0;padding:14px}
