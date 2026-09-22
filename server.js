@@ -4,14 +4,33 @@
  */
 
 const express = require("express");
+const compression = require("compression");
 const path = require("path");
 
 const app = express();
 
+/* Railway chạy sau proxy -> tin địa chỉ IP của client */
+app.set("trust proxy", 1);
+
 const PORT = process.env.PORT || 3000;
 const API = "https://phimapi.com";
 
-app.use(express.static(path.join(__dirname, "public"), { maxAge: "1h" }));
+/* Nén gzip mọi response (HTML/JSON nặng -> nhỏ hơn 5-10 lần) */
+app.use(compression());
+
+/* Static: HTML không cache (deploy mới có hiệu lực ngay), JS lib cache lâu */
+app.use(express.static(path.join(__dirname, "public"), {
+    setHeaders(res, filePath) {
+        if (filePath.endsWith(".html")) {
+            res.set("Cache-Control", "no-cache");
+        } else {
+            res.set("Cache-Control", "public, max-age=604800, immutable");
+        }
+    }
+}));
+
+/* Healthcheck cho Railway */
+app.get("/health", (req, res) => res.status(200).json({ ok: true }));
 
 /* ---------- Cache in-memory (TTL 5 phút) ---------- */
 
@@ -137,6 +156,22 @@ app.get("/api/movie/:slug", async (req, res) => {
         }
         // episodes ở top-level (bản gốc) hoặc trong item (v1)
         let episodes = data?.episodes || item.episodes || [];
+
+        /* Chuẩn hóa link: một số server nguồn trả "Tập 01|https://...m3u8"
+           (tên tập + url nối bằng |) -> cắt bỏ prefix, chỉ giữ URL. */
+        const cleanLink = u => {
+            if (typeof u !== "string") return u;
+            const i = u.lastIndexOf("|");
+            if (i > 0) {
+                const p = u.slice(i + 1).trim();
+                if (/^https?:\/\//i.test(p)) return p;
+            }
+            return u.trim();
+        };
+        episodes.forEach(s => (s.server_data || []).forEach(ep => {
+            if (ep.link_m3u8) ep.link_m3u8 = cleanLink(ep.link_m3u8);
+            if (ep.link_embed) ep.link_embed = cleanLink(ep.link_embed);
+        }));
         // Fallback: bản gốc phimapi.com gần đây không trả episodes,
         // lấy từ API v1 của kkphim2 (vẫn đầy đủ server_data + link_m3u8).
         let fallback_error = null;
@@ -171,6 +206,13 @@ app.get("/phim/:slug", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "movie.html"));
 });
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
     console.log(`Filmlo running on http://localhost:${PORT}`);
+});
+
+/* Graceful shutdown — Railway gửi SIGTERM khi redeploy */
+process.on("SIGTERM", () => {
+    console.log("SIGTERM received, shutting down...");
+    server.close(() => process.exit(0));
+    setTimeout(() => process.exit(0), 5000);
 });

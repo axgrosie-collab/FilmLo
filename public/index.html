@@ -2,7 +2,8 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0b0f17">
 <title>Filmlo — Xem phim miễn phí</title>
 <style>
 :root{
@@ -70,9 +71,36 @@ nav a.active{color:var(--text);background:var(--surface2);font-weight:600}
 .empty{grid-column:1/-1;text-align:center;color:var(--muted);padding:60px 0}
 
 @media(max-width:860px){
-  .top{flex-wrap:wrap}
+  .top{flex-wrap:wrap;gap:10px;padding:12px 14px}
   .search-wrap{margin-left:0;width:100%;order:3}
-  nav{overflow-x:auto;width:100%;order:2}
+  nav{overflow-x:auto;width:100%;order:2;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  nav::-webkit-scrollbar{display:none}
+  nav a{padding:8px 11px;font-size:13px}
+  .hero{padding:18px 14px 4px;gap:10px}
+  .hero h1{font-size:18px}
+  .btn-ghost{margin-left:auto;padding:8px 12px;font-size:12.5px}
+  .filter-panel{margin:10px 14px 0;padding:14px}
+  .f-label{width:100%}
+  .f-row{gap:6px}
+  .f-chip{padding:7px 12px;font-size:12px}
+  .btn-apply,.btn-clear{flex:1}
+  .grid{margin:16px auto;padding:0 12px;grid-template-columns:repeat(3,1fr);gap:10px}
+  .card .t{font-size:12px;padding:7px 8px 2px}
+  .card .s{font-size:10.5px;padding:2px 8px 9px}
+  .pager{padding:10px 0 30px}
+  .pager button{padding:10px 18px}
+  #historySec{padding:0 14px !important;margin-bottom:0 !important}
+  #historyRow .card{min-width:110px !important;width:110px !important}
+}
+@media(max-width:380px){
+  .grid{grid-template-columns:repeat(2,1fr)}
+}
+/* mobile: highlight rõ hơn khi chạm */
+@media(hover:none){
+  .card:active{transform:scale(.97);border-color:var(--accent)}
+  .sg-item:active{background:var(--surface2)}
+}
+*{-webkit-tap-highlight-color:transparent}
 </style>
 </head>
 <body>
@@ -137,13 +165,14 @@ nav a.active{color:var(--text);background:var(--surface2);font-weight:600}
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
 let page = 1, mode = "home", filterQ = "";
+const imgUrl = u => !u ? "" : /^https?:/.test(u) ? u : "https://phimimg.com/" + String(u).replace(/^\/+/, "");
 
 /* ---------- render ---------- */
 function renderItems(items){
   const g = $("grid");
   if (!items || !items.length){ g.innerHTML = '<div class="empty">Không tìm thấy phim nào.</div>'; return; }
   g.innerHTML = items.map(m => {
-    const img = m.poster_url || m.thumb_url || "";
+    const img = imgUrl(m.poster_url || m.thumb_url);
     return `<div class="card" onclick="location.href='/phim/${encodeURIComponent(m.slug || "")}'">
       <img src="${esc(img)}" alt="" loading="lazy">
       ${m.quality && m.quality !== "n/a" ? `<span class="badge">${esc(m.quality)}</span>` : ""}
@@ -218,7 +247,7 @@ $("search").addEventListener("input", () => {
       if (!items.length){ box.innerHTML = '<div class="sg-empty">Không tìm thấy phim.</div>'; box.classList.add("show"); return; }
       box.innerHTML = items.map(m => `
         <div class="sg-item" onclick="location.href='/phim/${encodeURIComponent(m.slug || "")}'">
-          <img src="${esc(m.thumb_url || m.poster_url || "")}" alt="" loading="lazy">
+          <img src="${esc(m.thumb_url ? imgUrl(m.thumb_url) : imgUrl(m.poster_url))}" alt="" loading="lazy">
           <div><div class="t">${esc(m.name)}</div><div class="s">${esc(m.year || "")} ${m.episode_current ? "• " + esc(m.episode_current) : ""}</div></div>
         </div>`).join("");
       box.classList.add("show");
@@ -322,7 +351,7 @@ function renderHistory(){
   $("historySec").style.display = "block";
   $("historyRow").innerHTML = h.slice(0, 20).map(m => `
     <div class="card" style="min-width:130px;width:130px;flex-shrink:0" onclick="location.href='/phim/${encodeURIComponent(m.slug)}'">
-      <img src="${esc(m.thumb || m.poster || "")}" alt="" loading="lazy" style="aspect-ratio:2/3">
+      <img src="${esc(imgUrl(m.thumb || m.poster))}" alt="" loading="lazy" style="aspect-ratio:2/3">
       <div class="t">${esc(m.name)}</div>
       ${m.ep ? `<div class="s" style="color:var(--accent)">${esc(m.ep)}</div>` : ""}
     </div>`).join("");
