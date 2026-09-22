@@ -53,32 +53,56 @@ main{max-width:1300px;margin:auto;padding:70px 24px 24px}
 .pl-buffer{position:absolute;left:0;top:0;bottom:0;background:rgba(255,255,255,.35);border-radius:3px;width:0}
 .pl-progress{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:3px;width:0}
 .pl-knob{position:absolute;top:50%;left:0;width:13px;height:13px;border-radius:50%;background:#fff;transform:translate(-50%,-50%);box-shadow:0 1px 4px rgba(0,0,0,.6)}
-.pl-row{display:flex;align-items:center;gap:2px;margin-top:2px}
-.pl-btn{background:none;border:none;color:#fff;font-size:17px;padding:9px;cursor:pointer;flex-shrink:0;line-height:1}
+.pl-row{display:flex;align-items:center;gap:3px;margin-top:2px}
+.pl-btn{background:none;border:none;color:#fff;font-size:17px;padding:9px;cursor:pointer;flex-shrink:0;line-height:1;border-radius:9px;transition:background .15s,opacity .15s}
+.pl-btn:hover{background:rgba(255,255,255,.12)}
 .pl-btn:active{opacity:.6}
-.pl-time{font-size:12px;color:#dfe6f5;margin-left:4px;flex-shrink:0;font-variant-numeric:tabular-nums}
-.pl-row .grow{flex:1}
-.pl-rate{position:relative}
+.pl-btn.on{color:#c4b5fd;background:rgba(99,102,241,.22)}
+.pl-time{font-size:12.5px;color:#e5ebf8;margin-left:5px;flex-shrink:0;font-variant-numeric:tabular-nums;letter-spacing:.3px}
+.pl-row .grow{flex:1;min-width:4px}
 /* tooltip thời gian khi kéo thanh tua */
 .pl-tip{position:absolute;bottom:24px;left:0;transform:translateX(-50%);background:rgba(0,0,0,.85);color:#fff;font-size:12px;padding:3px 9px;border-radius:8px;opacity:0;pointer-events:none;transition:opacity .15s;white-space:nowrap}
 .pl-seek.dragging .pl-tip{opacity:1}
-/* volume: hover bung slider (desktop), mobile dùng swipe mép phải */
-.pl-vol{display:flex;align-items:center}
-.pl-volbar{width:0;overflow:hidden;transition:width .2s ease;display:flex;align-items:center}
-.pl-vol:hover .pl-volbar{width:74px;padding-left:2px}
-.pl-voltrack{width:64px;height:5px;background:rgba(255,255,255,.25);border-radius:3px;position:relative;cursor:pointer;margin-left:4px}
-.pl-volfill{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:3px;width:100%}
-/* mobile: ẩn hover slider, dùng swipe */
+/* volume: nút loa + thanh dọc bung ra khi hover (desktop); mobile dùng swipe mép phải */
+.pl-vol{position:relative;display:flex;align-items:center}
+.pl-vol-pop{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);margin-bottom:8px;padding:9px 8px 6px;background:rgba(10,14,22,.95);border:1px solid var(--border);border-radius:12px;display:flex;flex-direction:column;align-items:center;gap:7px;opacity:0;visibility:hidden;transition:opacity .18s,visibility .18s;z-index:11;backdrop-filter:blur(8px);box-shadow:0 14px 35px rgba(0,0,0,.55)}
+.pl-vol:hover .pl-vol-pop,.pl-vol:focus-within .pl-vol-pop{opacity:1;visibility:visible}
+.pl-vol-num{font-size:11.5px;color:#e5ebf8;font-variant-numeric:tabular-nums;line-height:1}
+.pl-vol-track{position:relative;width:6px;height:90px;background:rgba(255,255,255,.25);border-radius:4px;cursor:pointer;touch-action:none}
+.pl-vol-fill{position:absolute;left:0;right:0;bottom:0;height:100%;border-radius:4px;background:linear-gradient(180deg,var(--accent),var(--accent2))}
+.pl-vol-knob{position:absolute;left:50%;bottom:100%;transform:translate(-50%,50%);width:13px;height:13px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.6)}
 @media(hover:none){
-  .pl-volbar{display:none}
+  .pl-vol-pop{display:none}
 }
-.pl-menu{position:absolute;bottom:110%;right:0;background:var(--surface);border:1px solid var(--border);border-radius:10px;display:none;overflow:hidden;z-index:9}
-.pl-menu.show{display:block}
-.pl-menu button{display:block;width:100%;padding:9px 20px;background:none;border:none;color:var(--text);font-size:13px;cursor:pointer;white-space:nowrap}
-.pl-menu button:hover,.pl-menu button.on{background:var(--surface2);color:var(--accent)}
+/* bảng cài đặt ⚙: tốc độ phát / tỷ lệ khung hình / chất lượng / mạch chủ */
+.pl-set{position:relative;display:flex;align-items:center}
+/* bảng cài đặt: nổi phía trên hàng nút (106px ≈ chiều cao .pl-controls + 9px khe) */
+.pl-panel{position:absolute;bottom:106px;right:14px;min-width:244px;max-width:calc(100vw - 26px);background:rgba(10,14,22,.97);border:1px solid var(--border);border-radius:12px;padding:6px;display:none;z-index:12;backdrop-filter:blur(8px);box-shadow:0 18px 45px rgba(0,0,0,.6)}
+.pl-panel.show{display:block}
+.pl-panel .pl-head{display:none;align-items:center;gap:8px;padding:6px 6px 9px;margin-bottom:4px;border-bottom:1px solid var(--border);font-size:12.5px;color:var(--muted)}
+.pl-panel.sub .pl-head{display:flex}
+.pl-back{background:none;border:none;color:#fff;font-size:20px;line-height:1;cursor:pointer;padding:0 4px}
+.pl-list{max-height:min(56vh,332px);overflow-y:auto}
+.pl-list::-webkit-scrollbar{width:8px}
+.pl-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+.prow{display:flex;align-items:center;gap:10px;width:100%;padding:10px;background:none;border:none;color:var(--text);font-size:13px;cursor:pointer;border-radius:9px;text-align:left}
+.prow:hover{background:rgba(255,255,255,.09)}
+.prow .pi{display:flex;width:18px;height:18px;color:#b9c3da;flex-shrink:0}
+.prow .pi svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.prow .pn{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.prow .pv{font-size:12px;color:var(--muted);max-width:45%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0;font-variant-numeric:tabular-nums}
+.prow .pc{color:var(--muted);font-size:15px;line-height:1;flex-shrink:0}
+.prow .pc.tick{color:var(--accent2);font-size:13px}
+.prow.sel{background:rgba(99,102,241,.16)}
+.prow.sel .pn,.prow.sel .pv{color:#fff}
+/* tỷ lệ khung hình của video m3u8 */
+.player-box.pl-ratio-16x9 video{position:absolute;top:50%;left:0;width:100%;height:auto;aspect-ratio:16/9;transform:translateY(-50%)}
+.player-box.pl-ratio-4x3 video{position:absolute;top:0;left:50%;height:100%;width:auto;aspect-ratio:4/3;transform:translateX(-50%)}
+.player-box.pl-ratio-fill video{object-fit:fill}
 /* embed mode: ẩn toàn bộ UI của mình, trả player về cho iframe embed */
 .player-box.embed-mode .pl-controls,
 .player-box.embed-mode .pl-center,
+.player-box.embed-mode .pl-panel,
 .player-box.embed-mode .player-overlay{display:none !important}
 .pl-hint{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,.72);color:#fff;padding:10px 20px;border-radius:30px;font-size:14px;pointer-events:none;opacity:0;transition:opacity .25s;z-index:6}
 .pl-hint.show{opacity:1}
@@ -159,7 +183,7 @@ h1{font-size:28px;margin-bottom:6px}
   .pbtn{padding:8px 10px;font-size:11.5px}
   .episodes{max-height:240px}
   .episode{padding:9px 13px;font-size:13px}
-  .pl-btn{font-size:19px;padding:11px}
+  .pl-btn{font-size:18px;padding:8px}
   .pl-center button{width:62px;height:62px;font-size:23px}
   .pl-time{font-size:11px}
   .related{grid-template-columns:repeat(3,1fr);gap:9px}
@@ -170,6 +194,26 @@ h1{font-size:28px;margin-bottom:6px}
 @media(hover:none){
   /* mobile: tăng vùng chạm thanh tua */
   .pl-seek{height:30px}
+}
+/* nút fullscreen góc trên-phải: mobile + khi hàng nút bị tràn */
+.pl-fs-corner{position:absolute;top:8px;right:8px;width:42px;height:42px;border-radius:50%;background:rgba(0,0,0,.45);border:none;color:#fff;font-size:20px;display:none;z-index:7;cursor:pointer;align-items:center;justify-content:center;line-height:1}
+.pl-fs-corner:active{background:rgba(0,0,0,.7)}
+.player-box.hide-ui .pl-fs-corner{opacity:0;pointer-events:none}
+.player-box.embed-mode .pl-fs-corner{display:none !important}
+/* CSS-fullscreen dự phòng cho trình duyệt không hỗ trợ Fullscreen API */
+.player-box.fake-fs{position:fixed;top:0;left:0;width:100vw;height:100vh;max-width:none;border-radius:0;z-index:9999}
+@media(max-width:700px){
+  .pl-fs-corner{display:flex}
+  .pl-time{font-size:10.5px;flex-shrink:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
+  .pl-btn{padding:8px;min-width:32px}
+  .pl-row{gap:1px}
+  .pl-fs-row{display:none}                 /* mobile: đã có nút toàn màn hình ở góc */
+  /* mobile: bảng cài đặt phủ vùng video (không bị cắt bởi khung 16:9) */
+  .pl-panel{top:8px;left:8px;right:8px;height:calc(100% - 16px);min-width:0;max-width:none;padding:4px;flex-direction:column;overflow:hidden}
+  .pl-panel.show{display:flex}
+  .pl-list{flex:1;min-height:0;max-height:none}
+  .prow{padding:8px 9px;font-size:12.5px;gap:8px}
+  .pl-panel .pl-head{padding:4px 4px 7px}
 }
 </style>
 </head>
@@ -206,28 +250,36 @@ h1{font-size:28px;margin-bottom:6px}
            <div class="pl-controls" id="plControls">
              <div class="pl-seek" id="plSeek"><div class="bar"><div class="pl-buffer" id="plBuffer"></div><div class="pl-progress" id="plProgress"></div><div class="pl-knob" id="plKnob"></div></div><div class="pl-tip" id="plTip">0:00</div></div>
              <div class="pl-row">
-               <button class="pl-btn" id="plPlay">▶</button>
-               <button class="pl-btn" id="plBack10">⏪</button>
-               <button class="pl-btn" id="plFwd10">⏩</button>
-               <span class="pl-time" id="plTime">0:00 / 0:00</span>
-               <span class="grow"></span>
-               <div class="pl-rate">
-                 <button class="pl-btn" id="plRateBtn">1x</button>
-                 <div class="pl-menu" id="plRateMenu"></div>
-               </div>
+               <button class="pl-btn" id="plBack10" title="Lùi 10 giây">⏪</button>
+               <button class="pl-btn" id="plPlay" title="Phát / Tạm dừng (Space)">▶</button>
+               <button class="pl-btn" id="plFwd10" title="Tiến 10 giây">⏩</button>
                <div class="pl-vol">
-                 <button class="pl-btn" id="plMute">🔊</button>
-                 <div class="pl-volbar" id="plVolBar"><div class="pl-voltrack"><div class="pl-volfill" id="plVolFillBar"></div></div></div>
+                 <button class="pl-btn" id="plMute" title="Tắt / bật tiếng (M)">🔊</button>
+                 <div class="pl-vol-pop" id="plVolPop">
+                   <span class="pl-vol-num" id="plVolNum">100</span>
+                   <div class="pl-vol-track" id="plVolTrack"><div class="pl-vol-fill" id="plVolPopFill"></div><div class="pl-vol-knob" id="plVolPopKnob"></div></div>
+                 </div>
                </div>
-               <button class="pl-btn" id="plFs">⛶</button>
+               <span class="pl-time" id="plTime">00:00 / 00:00</span>
+               <span class="grow"></span>
+               <div class="pl-set" id="plSet">
+                 <button class="pl-btn" id="plSetBtn" title="Cài đặt">⚙</button>
+               </div>
+               <button class="pl-btn" id="plPip" title="Hình trong hình" style="display:none">▣</button>
+               <button class="pl-btn pl-fs-row" id="plFs" title="Toàn màn hình (F)">⛶</button>
              </div>
+           </div>
+           <div class="pl-panel" id="plSetPanel">
+             <div class="pl-head"><button class="pl-back" id="plSetBack" title="Quay lại">‹</button><span id="plSetTitle"></span></div>
+             <div class="pl-list" id="plSetList"></div>
            </div>
            <div class="pl-side left" id="plSideLeft"><span class="si">☀️</span><div class="sbar"><div class="sfill" id="plBrightFill"></div></div><span class="sval" id="plBrightVal"></span></div>
            <div class="pl-side right" id="plSideRight"><span class="si" id="plVolIcon">🔊</span><div class="sbar"><div class="sfill" id="plVolFill"></div></div><span class="sval" id="plVolVal"></span></div>
            <div class="pl-hint" id="plHint"></div>
+           <button class="pl-fs-corner" id="plFsCorner" aria-label="Toàn màn hình">⛶</button>
          </div>
        </div>
-       <p class="player-note">💡 Ưu tiên m3u8 (chất lượng gốc, player riêng). Mobile: vuốt mép trái = độ sáng, vuốt mép phải = âm lượng. Link m3u8 lỗi thì bấm "Dự phòng".</p>
+       <p class="player-note">💡 Ưu tiên m3u8 (chất lượng gốc, player riêng). Mobile: bấm ⚙ để đổi tốc độ phát, tỷ lệ khung hình, chất lượng, mạch chủ. Vuốt mép trái = độ sáng, vuốt mép phải = âm lượng. Link m3u8 lỗi thì bấm "Dự phòng".</p>
        <p id="playerErr" class="err"></p>
      </div>
 
@@ -309,6 +361,11 @@ const cleanUrl = u => {
 /* ================= HLS PLAYER (custom controls) ================= */
 function destroyPlayer() {
   if (hls) { try { hls.destroy(); } catch{} hls = null; }
+  /* chất lượng + mạch chủ thuộc về instance HLS cũ -> xoá khi đổi tập/chế độ */
+  plLevels = []; plAudios = []; plQuality = -1; plAudio = 0;
+  closeSet();
+  $("plPip").classList.remove("on");
+  $("plPip").style.display = "none";
   clearInterval(plSaveTimer);          // dừng lưu vị trí khi rời chế độ video
   plVideo = null;
   [...$("playerBox").querySelectorAll("video,iframe,.pl-noep")].forEach(el => el.remove());
@@ -324,15 +381,126 @@ function setOverlay(name, ep, mode) {
   $("poEp").textContent = `${ep || ""} • ${mode}`;
 }
 function fmtTime(s){
-  if (!isFinite(s)) return "0:00";
+  if (!isFinite(s)) return "00:00";
   s = Math.floor(s);
   const h = Math.floor(s/3600), m = Math.floor(s%3600/60), sec = s%60;
-  return (h ? h + ":" + String(m).padStart(2,"0") : m) + ":" + String(sec).padStart(2,"0");
+  return (h ? h + ":" : "") + String(m).padStart(2,"0") + ":" + String(sec).padStart(2,"0");
 }
 
 /* ----- custom control wiring (gắn 1 lần) ----- */
 let plVideo = null, plHideTimer = null, plSeeking = false, plSaveTimer = null;
 const RATES = [0.5, 0.75, 1, 1.25, 1.5, 2];
+/* tỷ lệ khung hình — mỗi mục gắn 1 class lên .player-box */
+const RATIOS = [
+  { id: "default", cls: "pl-ratio-default", label: "Mặc định" },
+  { id: "16x9", cls: "pl-ratio-16x9", label: "16:9" },
+  { id: "4x3", cls: "pl-ratio-4x3", label: "4:3" },
+  { id: "fill", cls: "pl-ratio-fill", label: "Lấp đầy" }
+];
+/* icon SVG + tiêu đề bảng cài đặt ⚙ */
+const SET_ICON = {
+  speed: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 1.8"/></svg>',
+  ratio: '<svg viewBox="0 0 24 24"><rect x="3" y="5.5" width="18" height="13" rx="2.5"/></svg>',
+  quality: '<svg viewBox="0 0 24 24"><path d="M4 7.5h16M4 12h11.5M4 16.5h7.5"/></svg>',
+  audio: '<svg viewBox="0 0 24 24"><path d="M5 10v4M9.5 6.5v11M14 9v6M18.5 4.5v15"/></svg>'
+};
+const SET_TITLE = { speed: "Tốc độ phát", ratio: "Tỷ lệ khung hình", quality: "Chất lượng", audio: "Mạch chủ" };
+
+/* trạng thái cài đặt (tốc độ + tỷ lệ được nhớ qua localStorage) */
+let plRate = (() => { const r = parseFloat(localStorage.getItem("filmlo_rate") || "1"); return RATES.includes(r) ? r : 1; })();
+let plRatio = (() => { const r = localStorage.getItem("filmlo_ratio") || "default"; return RATIOS.some(x => x.id === r) ? r : "default"; })();
+let plLevels = [];    // hls.levels      -> [{ index, label }]
+let plAudios = [];    // hls.audioTracks -> [{ index, label }]
+let plQuality = -1;   // -1 = Auto (tự chọn theo băng thông)
+let plAudio = 0;
+let plSetView = "";   // "" = bảng chính | "speed" | "ratio" | "quality" | "audio"
+
+const rateLabel = r => r === 1 ? "Bình thường" : r + "x";
+const ratioLabel = id => (RATIOS.find(x => x.id === id) || RATIOS[0]).label;
+const qualityLabel = () => plQuality < 0 ? "Auto" : (plLevels[plQuality]?.label || "Auto");
+const audioLabel = () => plAudios[plAudio]?.label || "Mặc định";
+
+function applyRate(){
+  if (plVideo) plVideo.playbackRate = plRate;
+  try { localStorage.setItem("filmlo_rate", String(plRate)); } catch {}
+}
+function applyRatio(){
+  const box = $("playerBox");
+  RATIOS.forEach(x => box.classList.remove(x.cls));
+  box.classList.add((RATIOS.find(x => x.id === plRatio) || RATIOS[0]).cls);
+  try { localStorage.setItem("filmlo_ratio", plRatio); } catch {}
+}
+function setQuality(i){
+  plQuality = i;
+  if (hls) hls.currentLevel = i;
+}
+function setAudio(i){
+  plAudio = i;
+  if (hls && typeof hls.audioTrack === "number") hls.audioTrack = i;
+}
+function closeSet(){
+  plSetView = "";
+  $("plSetPanel").classList.remove("show", "sub");
+  $("plSetBtn").classList.remove("on");
+}
+function openSet(view){
+  plSetView = view || "";
+  renderSettings();
+  $("plSetPanel").classList.add("show");
+  $("plSetBtn").classList.add("on");
+}
+function renderSettings(){
+  const list = $("plSetList");
+  const view = plSetView;
+  $("plSetPanel").classList.toggle("sub", !!view);
+  $("plSetTitle").textContent = SET_TITLE[view] || "";
+  /* mỗi dòng: { ic, label, value, next, sel, act } — next = mở bảng con */
+  const rows = [];
+  if (!view) {
+    rows.push({ ic: "speed", label: "Tốc độ phát", value: rateLabel(plRate), next: "speed" });
+    rows.push({ ic: "ratio", label: "Tỷ lệ khung hình", value: ratioLabel(plRatio), next: "ratio" });
+    if (plLevels.length) rows.push({ ic: "quality", label: "Chất lượng", value: qualityLabel(), next: "quality" });
+    rows.push({ ic: "audio", label: "Mạch chủ", value: audioLabel(), next: "audio" });
+  } else if (view === "speed") {
+    RATES.forEach(r => rows.push({
+      label: rateLabel(r), sel: r === plRate,
+      act() { plRate = r; applyRate(); }
+    }));
+  } else if (view === "ratio") {
+    RATIOS.forEach(x => rows.push({
+      label: x.label, sel: x.id === plRatio,
+      act() { plRatio = x.id; applyRatio(); }
+    }));
+  } else if (view === "quality") {
+    rows.push({ label: "Auto", sel: plQuality < 0, act() { setQuality(-1); } });
+    plLevels.forEach(l => rows.push({
+      label: l.label, sel: plQuality === l.index, act() { setQuality(l.index); }
+    }));
+  } else if (view === "audio") {
+    if (!plAudios.length) rows.push({ label: "Mặc định", sel: true, act() {} });
+    plAudios.forEach(t => rows.push({
+      label: t.label, sel: plAudio === t.index, act() { setAudio(t.index); }
+    }));
+  }
+  list.innerHTML = "";
+  rows.forEach(row => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "prow" + (row.sel ? " sel" : "");
+    b.innerHTML =
+      (row.ic ? `<span class="pi">${SET_ICON[row.ic]}</span>` : "") +
+      `<span class="pn">${esc(row.label)}</span>` +
+      (row.value ? `<span class="pv">${esc(row.value)}</span>` : "") +
+      (row.next ? `<span class="pc">›</span>` : `<span class="pc tick">${row.sel ? "✓" : ""}</span>`);
+    b.onclick = e => {
+      e.stopPropagation();
+      if (row.next) { plSetView = row.next; renderSettings(); return; }
+      row.act && row.act();
+      closeSet();
+    };
+    list.appendChild(b);
+  });
+}
 
 function posKey(){ return `filmlo_pos_${slug}_${currentEp?.name || ""}`; }
 function showControls(){
@@ -452,43 +620,57 @@ function wireControls(video){
     showControls();
   });
 
-  /* tốc độ phát */
-  const menu = $("plRateMenu");
-  menu.innerHTML = RATES.map(r => `<button data-r="${r}">${r}x</button>`).join("");
-  menu.addEventListener("click", e => {
-    const b = e.target.closest("button[data-r]"); if (!b) return;
-    video.playbackRate = parseFloat(b.dataset.r);
-    $("plRateBtn").textContent = b.dataset.r + "x";
-    try{ localStorage.setItem("filmlo_rate", b.dataset.r); }catch{}
-    menu.querySelectorAll("button").forEach(x => x.classList.toggle("on", x === b));
-    menu.classList.remove("show");
-  });
-  $("plRateBtn").onclick = e => { e.stopPropagation(); menu.classList.toggle("show"); };
-  if (!wireControls._menuClose) {
-    wireControls._menuClose = true;
-    document.addEventListener("click", e => { if (!e.target.closest(".pl-rate")) menu.classList.remove("show"); });
+  /* hình trong hình (Picture-in-Picture) */
+  const pipBtn = $("plPip");
+  const pipKind = (document.pictureInPictureEnabled && video.requestPictureInPicture) ? "std"
+    : (video.webkitSetPresentationMode ? "webkit" : "");
+  pipBtn.classList.remove("on");
+  pipBtn.style.display = pipKind ? "" : "none";
+  if (pipKind) {
+    pipBtn.onclick = e => {
+      e.stopPropagation();
+      if (pipKind === "webkit") {   // Safari iOS/iPadOS
+        video.webkitSetPresentationMode(
+          video.webkitPresentationMode === "picture-in-picture" ? "inline" : "picture-in-picture");
+        return;
+      }
+      if (document.pictureInPictureElement) { document.exitPictureInPicture().catch(() => {}); return; }
+      video.requestPictureInPicture().catch(() => showHint("Thiết bị không hỗ trợ hình trong hình"));
+    };
+    const pipSync = () => pipBtn.classList.toggle("on",
+      document.pictureInPictureElement === video || video.webkitPresentationMode === "picture-in-picture");
+    video.addEventListener("enterpictureinpicture", pipSync);
+    video.addEventListener("leavepictureinpicture", pipSync);
+    video.addEventListener("webkitpresentationmodechanged", pipSync);
   }
 
-  /* âm thanh: nút mute + slider hover (desktop); mobile = vuốt mép phải */
-  const volBar = $("plVolBar");
+  /* âm thanh: nút loa + thanh dọc bung khi hover (desktop); mobile = vuốt mép phải */
+  const volTrack = $("plVolTrack");
   const setVol = v => {
     video.muted = false;
     video.volume = Math.max(0, Math.min(1, v));
   };
-  const volFromEvent = e => {
-    const track = volBar.querySelector(".pl-voltrack");
-    const r = track.getBoundingClientRect();
-    setVol((e.clientX - r.left) / r.width);
+  const volFromY = clientY => {
+    const r = volTrack.getBoundingClientRect();
+    if (!r.height) return;
+    setVol((r.bottom - clientY) / r.height);
   };
   let volDrag = false;
-  volBar.addEventListener("pointerdown", e => { volDrag = true; try{volBar.setPointerCapture(e.pointerId);}catch{}; volFromEvent(e); });
-  volBar.addEventListener("pointermove", e => { if (volDrag) volFromEvent(e); });
-  volBar.addEventListener("pointerup", () => volDrag = false);
-  volBar.addEventListener("pointercancel", () => volDrag = false);
+  volTrack.addEventListener("pointerdown", e => {
+    volDrag = true;
+    try { volTrack.setPointerCapture(e.pointerId); } catch {}
+    volFromY(e.clientY);
+  });
+  volTrack.addEventListener("pointermove", e => { if (volDrag) volFromY(e.clientY); });
+  const endVol = () => volDrag = false;
+  volTrack.addEventListener("pointerup", endVol);
+  volTrack.addEventListener("pointercancel", endVol);
   $("plMute").onclick = () => { video.muted = !video.muted; };
   const syncVol = () => {
     const v = video.muted ? 0 : video.volume;
-    $("plVolFillBar").style.width = (v * 100) + "%";
+    $("plVolPopFill").style.height = (v * 100) + "%";
+    $("plVolPopKnob").style.bottom = (v * 100) + "%";
+    $("plVolNum").textContent = String(Math.round(v * 100));
     $("plMute").textContent = (video.muted || !video.volume) ? "🔇" : (video.volume < .5 ? "🔉" : "🔊");
     $("plVolIcon").textContent = (video.muted || !video.volume) ? "🔇" : (video.volume < .5 ? "🔉" : "🔊");
   };
@@ -513,20 +695,25 @@ function wireControls(video){
       }
     });
   }
+  $("plFsCorner").onclick = () => $("plFs").click();
   $("plFs").onclick = () => {
     if (document.fullscreenElement) { document.exitFullscreen(); return; }
+    if (box.classList.contains("fake-fs")) { box.classList.remove("fake-fs"); try { if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); } catch {} return; }
     if (isIOS) {
       if (video.webkitEnterFullscreen) video.webkitEnterFullscreen();      // iPhone Safari: chỉ video được
       else if (video.webkitRequestFullscreen) video.webkitRequestFullscreen(); // iPadOS
       return;
     }
-    if (box.requestFullscreen) {
-      const p = box.requestFullscreen();
+    const canFs = box.requestFullscreen || box.webkitRequestFullscreen || box.msRequestFullscreen;
+    if (canFs) {
+      const p = (box.requestFullscreen || box.webkitRequestFullscreen || box.msRequestFullscreen).call(box);
       if (p && p.then) p.then(lockLandscape).catch(() => {});
       else lockLandscape();
+      return;
     }
-    else if (box.webkitRequestFullscreen) { box.webkitRequestFullscreen(); lockLandscape(); }
-    else if (video.webkitEnterFullscreen) video.webkitEnterFullscreen();
+    /* Không có Fullscreen API (một số webview Android) -> CSS fullscreen */
+    box.classList.add("fake-fs");
+    lockLandscape();
   };
 
   /* bàn phím (desktop) — gắn 1 lần duy nhất, không trùng mỗi khi đổi tập */
@@ -542,6 +729,7 @@ function wireControls(video){
       else if (e.key === "ArrowDown"){ e.preventDefault(); setVol(plVideo ? plVideo.volume - .1 : 0); }
       else if (e.key === "f") $("plFs").click();
       else if (e.key === "m") $("plMute").click();
+      else if (e.key === "Escape") closeSet();
     });
   }
 
@@ -588,6 +776,8 @@ function wireControls(video){
 
   box.addEventListener("touchstart", e => {
     if (!plVideo || box.classList.contains("embed-mode")) return;
+    /* bảng cài đặt / thanh âm lượng đang mở: để chúng tự xử lý (scroll, kéo) */
+    if (e.target.closest && e.target.closest(".pl-panel,.pl-vol-pop")) { tS = null; return; }
     const t = tp(e);
     tS = { x: t.clientX, y: t.clientY, t: Date.now(), r: box.getBoundingClientRect() };
     tMoved = false; swActive = null;
@@ -640,6 +830,8 @@ function wireControls(video){
     const t = tp(e);
     const x = t ? t.clientX : tS.x;
     tS = null;
+    /* chạm trong bảng cài đặt / thanh âm lượng -> không tính là tap lên video */
+    if (e.target.closest && e.target.closest(".pl-panel,.pl-vol-pop")) { swActive = null; return; }
     if (swActive) { swActive = null; return; }   /* vừa vuốt -> không tính tap */
     if (!moved && dur < 350) {
       lastTouchTap = Date.now();
@@ -710,8 +902,16 @@ function playDirect(urlRaw) {
   hls.loadSource(url);
   hls.attachMedia(video);
   hls.on(Hls.Events.MANIFEST_PARSED, () => {
-    const r = parseFloat(localStorage.getItem("filmlo_rate") || "1");
-    if (r && RATES.includes(r)) { video.playbackRate = r; $("plRateBtn").textContent = r + "x"; }
+    /* nạp danh sách chất lượng + mạch chủ cho bảng cài đặt ⚙ */
+    plLevels = (hls.levels || []).map((l, i) => ({
+      index: i, label: l.height ? l.height + "p" : (l.name || "Chất lượng " + (i + 1))
+    }));
+    plAudios = (hls.audioTracks || []).map((t, i) => ({
+      index: i, label: t.name || t.lang || ("Mạch " + (i + 1))
+    }));
+    plQuality = -1; plAudio = 0;
+    applyRate();
+    renderSettings();
     video.play().catch(() => {});
   });
   hls.on(Hls.Events.ERROR, (_, data) => {
@@ -903,6 +1103,16 @@ async function loadRelated(m) {
 }
 
 /* ================= INIT ================= */
+/* bảng cài đặt ⚙: tốc độ phát / tỷ lệ khung hình / chất lượng / mạch chủ */
+applyRatio();
+renderSettings();
+$("plSetBtn").onclick = e => {
+  e.stopPropagation();
+  $("plSetPanel").classList.contains("show") ? closeSet() : openSet("");
+};
+$("plSetBack").onclick = e => { e.stopPropagation(); openSet(""); };
+document.addEventListener("click", e => { if (!e.target.closest(".pl-set,.pl-panel")) closeSet(); });
+
 $("switchMode").onclick = switchMode;
 $("prevEp").onclick = playPrevEp;
 $("nextEp").onclick = playNextEp;
