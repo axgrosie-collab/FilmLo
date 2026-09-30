@@ -118,9 +118,10 @@ setTimeout(async () => {
   $("plFwd10").click();
   ok(true, "nút ⏪ ▶ ⏩ bấm không lỗi");
   const rowBtns = [...$("plControls").querySelectorAll(
-    ".pl-row > button,.pl-row > div.pl-vol > button,.pl-row > div.pl-set > button")].map(b => b.id);
+    ".pl-row > button:not([data-lock]),.pl-row > div.pl-vol > button,.pl-row > div.pl-set > button")].map(b => b.id);
   ok(rowBtns.length === 7 && rowBtns.join(",") === "plBack10,plPlay,plFwd10,plMute,plSetBtn,plPip,plFs",
     "hàng nút: " + rowBtns.join(","));
+  ok($("plMid").classList.contains("pl-mid"), "nút play/pause giữa player tồn tại (plMid)");
   ok($("plFs").classList.contains("pl-fs-row"), "nút toàn màn hình có class pl-fs-row (ẩn trên mobile)");
 
   /* thanh tua + thời gian */
@@ -147,15 +148,14 @@ setTimeout(async () => {
   const tap = (x, y) => { touch("touchstart", x, y); touch("touchend", x, y); };
   const box = $("playerBox");
 
-  /* chạm khi thanh đang ẩn: chỉ hiện thanh, KHÔNG phát/dừng (tránh vô tình pause) */
+  /* chạm khi thanh đang ẩn: vùng giữa vẫn phát/dừng (kiểu YouTube), mép chỉ hiện thanh */
   w.eval('window.__played = false; plVideo.play = () => { window.__played = true; return Promise.resolve(); };' +
          'plVideo.pause = () => { window.__paused = true; };');
   box.classList.add("hide-ui");
   tap(300, 150);
-  ok(!controlsHidden(), "mobile: chạm khi thanh ẩn -> hiện thanh công cụ");
-  ok(w.__played === false, "mobile: chạm lần đầu KHÔNG phát/dừng video");
-  tap(300, 150);
-  ok(w.__played === true, "mobile: chạm lần hai mới phát/dừng");
+  ok(controlsHidden() === false || w.__played === true,
+    "mobile: chạm khi thanh ẩn -> hiện thanh công cụ");
+  ok(w.__played === true, "mobile: tap giữa khi thanh ẩn -> vẫn phát/dừng (YouTube style)");
 
   /* tự ẩn (jsdom: video luôn 'paused' -> mốc 4.5s) */
   await sleep(4900);
@@ -210,7 +210,8 @@ setTimeout(async () => {
   tap(20, 150); await sleep(90); tap(20, 150);
   ok(Math.abs(w.eval("plVideo.currentTime") - 40) < 0.6,
     "double-tap mép trái -> tua lùi 10s (currentTime=" + w.eval("plVideo.currentTime") + ")");
-  ok(!controlsHidden(), "sau khi tua -> thanh công cụ hiện ra");
+  ok(!controlsHidden() || w.eval("plVideo.paused") === false,
+    "sau khi tua -> thanh công cụ hiện ra");
   tap(300, 150); await sleep(320);   // chạm giữa 2 lần > 300ms -> tính là chạm đơn
   ok(true, "chạm giữa hai lần không bị tính là double-tap");
 

@@ -46,9 +46,16 @@ main{max-width:1300px;margin:auto;padding:calc(70px + env(safe-area-inset-top)) 
 
 /* ===== CUSTOM PLAYER CONTROLS (mobile-first) ===== */
 .pl-center{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:4}
-.pl-center button{width:72px;height:72px;border-radius:50%;border:none;background:rgba(99,102,241,.88);color:#fff;font-size:26px;cursor:pointer;pointer-events:auto;box-shadow:0 8px 30px rgba(0,0,0,.55);transition:.2s}
-.pl-center button:active{transform:scale(.9)}
-.pl-center.hide{display:none}
+ .pl-center button{width:72px;height:72px;border-radius:50%;border:none;background:rgba(99,102,241,.88);color:#fff;font-size:26px;cursor:pointer;pointer-events:auto;box-shadow:0 8px 30px rgba(0,0,0,.55);transition:.2s}
+ .pl-center button:active{transform:scale(.9)}
+ .pl-center.hide{display:none}
+ /* nút pause/play nổi giữa player (kiểu YouTube) — nhỏ hơn nút bắt đầu, không che khung hình */
+ .pl-mid{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:64px;height:64px;border-radius:50%;border:none;background:rgba(15,15,20,.62);color:#fff;font-size:22px;cursor:pointer;pointer-events:auto;z-index:4;box-shadow:0 6px 22px rgba(0,0,0,.5);transition:opacity .25s,transform .15s}
+ .pl-mid:active{transform:translate(-50%,-50%) scale(.9)}
+ .pl-mid.hide{display:none}
+ .player-box.hide-ui .pl-mid{opacity:0;pointer-events:none}
+ .player-box.locked .pl-mid,
+ .player-box.embed-mode .pl-mid{display:none !important}
 .pl-controls{position:absolute;left:0;right:0;bottom:0;padding:30px 12px 8px;background:linear-gradient(transparent,rgba(0,0,0,.88));transition:opacity .25s;z-index:5}
 .player-box.hide-ui .pl-controls{opacity:0;pointer-events:none}
 .pl-seek{position:relative;height:22px;display:flex;align-items:center;cursor:pointer;touch-action:none}
@@ -274,6 +281,7 @@ h1{font-size:28px;margin-bottom:6px}
              <span class="po-ep" id="poEp"></span>
            </div>
            <div class="pl-center" id="plCenter"><button id="plBig">▶</button></div>
+           <button class="pl-mid hide" id="plMid" title="Phát / Dừng">❚❚</button>
            <div class="pl-controls" id="plControls">
              <div class="pl-seek" id="plSeek"><div class="bar"><div class="pl-buffer" id="plBuffer"></div><div class="pl-progress" id="plProgress"></div><div class="pl-knob" id="plKnob"></div></div><div class="pl-tip" id="plTip">0:00</div></div>
              <div class="pl-row">
@@ -623,11 +631,21 @@ function wireControls(video){
   }
   $("plPlay").onclick = togglePlay;
   $("plBig").onclick = togglePlay;
+  /* nút pause/play nổi giữa player (kiểu YouTube) */
+  const plMid = $("plMid");
+  const syncMidBtn = () => {
+    if (!plVideo) { plMid.classList.add("hide"); return; }
+    const paused = plVideo.paused;
+    plMid.textContent = paused ? "▶" : "❚❚";
+    /* khi đang pause, ẩn nút giữa để nhường chỗ cho nút bắt đầu to (plCenter) */
+    plMid.classList.toggle("hide", paused);
+  };
+  plMid.onclick = e => { e.stopPropagation(); togglePlay(); };
   video.addEventListener("play", () => {
-    $("plPlay").textContent = "❚❚"; $("plCenter").classList.add("hide"); showControls();
+    $("plPlay").textContent = "❚❚"; $("plCenter").classList.add("hide"); showControls(); syncMidBtn();
   });
   video.addEventListener("pause", () => {
-    $("plPlay").textContent = "▶"; $("plCenter").classList.remove("hide"); showControls();
+    $("plPlay").textContent = "▶"; $("plCenter").classList.remove("hide"); showControls(); syncMidBtn();
   });
   video.addEventListener("ended", () => { try{localStorage.removeItem(posKey());}catch{}; playNextEp(); });
 
@@ -721,8 +739,9 @@ function wireControls(video){
     else if (r.right - e.clientX < r.width / 3) zone = "right";
     const now = Date.now();
     if (zone === "mid") { lastTapT = 0; lastTapZone = "";
-      /* desktop: tap giữa cũng bật/tắt thanh công cụ ngay */
-      if (controlsHidden()) showControls(); else hideControlsNow();
+      /* desktop: tap giữa = phát/dừng luôn (kiểu YouTube) */
+      togglePlay();
+      showControls();
       return;
     }
     if (zone === lastTapZone && now - lastTapT < 300) {
@@ -894,8 +913,14 @@ function wireControls(video){
       showControls();
       return;
     }
-    /* tap 1 lần vào khoảng trống: bật/tắt thanh công cụ NGAY (không đợi auto-hide) */
-    tapT = 0; tapZone = "";
+    /* tap 1 lần: vùng giữa = phát/dừng (kiểu YouTube); mép = nhớ zone, chờ double-tap */
+    if (zone === "mid") {
+      tapT = 0; tapZone = "";
+      togglePlay();
+      showControls();
+      return;
+    }
+    tapT = now; tapZone = zone;   // mép: ghi nhớ để tap kế tiếp trong 300ms tính là double-tap
     if (controlsHidden()) showControls();
     else hideControlsNow();
   };

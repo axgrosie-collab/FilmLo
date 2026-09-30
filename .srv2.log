@@ -1,0 +1,13 @@
+Filmlo running on http://localhost:3999
+[2026-09-30T16:27:29.220Z] ::1 "GET /api/movies?page=1" 200 472ms 12490 "Mozilla/5.0 (Windows NT; Windows NT 10.0; en-US) WindowsPowe"
+[2026-09-30T16:32:01.411Z] ::1 "GET /" 200 19ms - "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+[2026-09-30T16:32:02.137Z] ::1 "GET /api/movies?page=1" 200 15ms - "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+[2026-09-30T16:32:02.452Z] ::1 "GET /api/categories" 200 332ms - "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+[2026-09-30T16:32:02.458Z] ::1 "GET /api/countries" 200 337ms - "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+[2026-09-30T16:32:02.509Z] ::1 "GET /favicon.ico" 404 3ms 150 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+[2026-09-30T16:32:03.099Z] ::1 "GET /api/years" 502 977ms 64 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+[2026-09-30T16:32:04.886Z] ::1 "GET /phim/toi-khong-phai-la-dai-su" 200 22ms - "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+[2026-09-30T16:32:05.442Z] ::1 "GET /hls.min.js" 200 448ms - "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+[2026-09-30T16:32:05.979Z] ::1 "GET /api/movie/toi-khong-phai-la-dai-su" 200 412ms - "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+[2026-09-30T16:32:06.114Z] ::1 "GET /api/category/chinh-kich?page=1" 200 116ms - "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+[2026-09-30T16:32:12.395Z] ::1 "GET /favicon.ico" 404 3ms 150 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"

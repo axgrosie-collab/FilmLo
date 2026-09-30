@@ -15,6 +15,24 @@ app.set("trust proxy", 1);
 const PORT = process.env.PORT || 3000;
 const API = "https://phimapi.com";
 
+/* ---------- Log truy cập (xem trên Railway: Deployments → Logs) ---------- */
+app.use((req, res, next) => {
+    const t0 = Date.now();
+    res.on("finish", () => {
+        /* bỏ qua healthcheck để log đỡ nhiễu */
+        if (req.path === "/health") return;
+        const ms = Date.now() - t0;
+        const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress || "?";
+        const ua = (req.headers["user-agent"] || "").slice(0, 60);
+        const size = res.get("Content-Length") || "-";
+        console.log(
+            `[${new Date().toISOString()}] ${ip} "${req.method} ${req.originalUrl}" ` +
+            `${res.statusCode} ${ms}ms ${size} "${ua}"`
+        );
+    });
+    next();
+});
+
 /* Nén gzip mọi response (HTML/JSON nặng -> nhỏ hơn 5-10 lần) */
 app.use(compression());
 
