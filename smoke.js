@@ -23,7 +23,7 @@ setTimeout(async () => {
   }
 
   // endpoints cơ bản
-  await check("/");
+  await check("/", { expectJson: false });   // trang chủ trả HTML, không phải JSON
   await check("/api/categories");
   await check("/api/countries");
   await check("/api/movies?page=1");

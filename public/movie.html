@@ -12,23 +12,32 @@
   --text:#e8edf6;--muted:#8b96ab;--accent:#6366f1;--accent2:#a855f7;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);color:var(--text);font-family:"Segoe UI",system-ui,Arial,sans-serif}
+body{background:
+  radial-gradient(ellipse 80% 50% at 50% -10%, rgba(99,102,241,.14), transparent 60%),
+  radial-gradient(ellipse 60% 40% at 85% 20%, rgba(192,132,252,.08), transparent 60%),
+  var(--bg);
+  color:var(--text);font-family:"Segoe UI",system-ui,Arial,sans-serif;min-height:100vh}
 
-header{background:rgba(11,15,23,.96);border-bottom:1px solid var(--border);padding:calc(13px + env(safe-area-inset-top)) 24px 13px;position:fixed;top:0;left:0;width:100%;box-sizing:border-box;z-index:60;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+header{background:rgba(8,10,18,.84);border-bottom:1px solid rgba(37,51,82,.6);padding:calc(13px + env(safe-area-inset-top)) 24px 13px;position:fixed;top:0;left:0;width:100%;box-sizing:border-box;z-index:60;backdrop-filter:blur(18px) saturate(1.3);-webkit-backdrop-filter:blur(18px) saturate(1.3)}
 .top{max-width:1300px;margin:auto;display:flex;align-items:center;gap:16px}
-.logo{font-size:20px;font-weight:800;background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent;text-decoration:none}
-.back{margin-left:auto;color:var(--muted);text-decoration:none;font-size:13px;border:1px solid var(--border);padding:8px 14px;border-radius:8px}
-.back:hover{color:var(--text);border-color:var(--accent)}
+.logo{font-size:20px;font-weight:800;background:linear-gradient(90deg,#818cf8,var(--accent2) 55%,#f472b6);-webkit-background-clip:text;background-clip:text;color:transparent;text-decoration:none;filter:drop-shadow(0 0 12px rgba(99,102,241,.35))}
+.back{margin-left:auto;color:var(--muted);text-decoration:none;font-size:13px;border:1px solid var(--border);padding:8px 14px;border-radius:9px;transition:.2s}
+.back:hover{color:var(--text);border-color:var(--accent);box-shadow:0 0 12px rgba(99,102,241,.2)}
 
 main{max-width:1300px;margin:auto;padding:calc(70px + env(safe-area-inset-top)) 24px calc(24px + env(safe-area-inset-bottom))}
 
-.card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:18px}
+/* KHÔNG dùng backdrop-filter ở đây: .card là tổ tiên của <video> — blur buộc trình duyệt
+   vẽ lại/blur mỗi frame khi video chạy -> tụt FPS, giật hình. Thay bằng nền gần đặc. */
+.card{background:rgba(16,21,31,.92);border:1px solid rgba(37,51,82,.6);border-radius:18px;padding:18px}
 
 /* ===== PLAYER + EPISODE CARD ===== */
 .watch-card{display:grid;grid-template-columns:1fr 320px;gap:18px}
-.player-shell{position:relative;border-radius:14px;padding:2px;background:linear-gradient(135deg,rgba(99,102,241,.55),rgba(168,85,247,.35),rgba(99,102,241,.15));box-shadow:0 20px 55px rgba(0,0,0,.55)}
-.player-box{position:relative;width:100%;aspect-ratio:16/9;background:#000;border-radius:12px;overflow:hidden;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none}
+.player-shell{position:relative;border-radius:16px;padding:2px;background:linear-gradient(135deg,rgba(129,140,248,.6),rgba(192,132,252,.4),rgba(99,102,241,.18));box-shadow:0 20px 55px rgba(0,0,0,.55),0 0 30px rgba(99,102,241,.15)}
+/* contain:isolate giới hạn phạm vi vẽ/repaint trong khung player -> không kéo cả trang vẽ lại */
+.player-box{position:relative;width:100%;aspect-ratio:16/9;background:#000;border-radius:14px;overflow:hidden;contain:layout paint;isolation:isolate;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none}
 .player-box video,.player-box iframe{width:100%;height:100%;border:none;display:block}
+/* đẩy video lên layer riêng (GPU) để decode vẽ bằng đường tăng tốc phần cứng, mượt hơn */
+.player-box video{transform:translateZ(0);backface-visibility:hidden}
 /* lớp phủ làm mờ (độ sáng) — rẻ hơn filter:brightness() rất nhiều trên mobile */
 .pl-dim{position:absolute;inset:0;background:#000;opacity:0;pointer-events:none;z-index:1;transition:opacity .12s linear}
 .player-box.dragging .pl-dim{transition:none}
@@ -46,7 +55,7 @@ main{max-width:1300px;margin:auto;padding:calc(70px + env(safe-area-inset-top)) 
 
 /* ===== CUSTOM PLAYER CONTROLS (mobile-first) ===== */
 .pl-center{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:4}
- .pl-center button{width:72px;height:72px;border-radius:50%;border:none;background:rgba(99,102,241,.88);color:#fff;font-size:26px;cursor:pointer;pointer-events:auto;box-shadow:0 8px 30px rgba(0,0,0,.55);transition:.2s}
+ .pl-center button{width:72px;height:72px;border-radius:50%;border:none;background:linear-gradient(135deg,rgba(99,102,241,.95),rgba(168,85,247,.88));color:#fff;font-size:26px;cursor:pointer;pointer-events:auto;box-shadow:0 8px 30px rgba(0,0,0,.55),0 0 26px rgba(99,102,241,.35);transition:.2s}
  .pl-center button:active{transform:scale(.9)}
  .pl-center.hide{display:none}
  /* nút pause/play nổi giữa player (kiểu YouTube) — nhỏ hơn nút bắt đầu, không che khung hình */
@@ -75,7 +84,7 @@ main{max-width:1300px;margin:auto;padding:calc(70px + env(safe-area-inset-top)) 
 .pl-seek.dragging .pl-tip{opacity:1}
 /* volume: nút loa + thanh dọc bung ra khi hover (desktop); mobile dùng swipe mép phải */
 .pl-vol{position:relative;display:flex;align-items:center}
-.pl-vol-pop{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);margin-bottom:8px;padding:9px 8px 6px;background:rgba(10,14,22,.95);border:1px solid var(--border);border-radius:12px;display:flex;flex-direction:column;align-items:center;gap:7px;opacity:0;visibility:hidden;transition:opacity .18s,visibility .18s;z-index:11;backdrop-filter:blur(8px);box-shadow:0 14px 35px rgba(0,0,0,.55)}
+.pl-vol-pop{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);margin-bottom:8px;padding:9px 8px 6px;background:rgba(10,14,22,.95);border:1px solid var(--border);border-radius:12px;display:flex;flex-direction:column;align-items:center;gap:7px;opacity:0;visibility:hidden;transition:opacity .18s,visibility .18s;z-index:11;box-shadow:0 14px 35px rgba(0,0,0,.55)}
 .pl-vol:hover .pl-vol-pop,.pl-vol:focus-within .pl-vol-pop{opacity:1;visibility:visible}
 .pl-vol-num{font-size:11.5px;color:#e5ebf8;font-variant-numeric:tabular-nums;line-height:1}
 .pl-vol-track{position:relative;width:6px;height:90px;background:rgba(255,255,255,.25);border-radius:4px;cursor:pointer;touch-action:none}
@@ -87,7 +96,7 @@ main{max-width:1300px;margin:auto;padding:calc(70px + env(safe-area-inset-top)) 
 /* bảng cài đặt ⚙: tốc độ phát / tỷ lệ khung hình / chất lượng */
 .pl-set{position:relative;display:flex;align-items:center}
 /* bảng cài đặt: nổi phía trên hàng nút (106px ≈ chiều cao .pl-controls + 9px khe) */
-.pl-panel{position:absolute;bottom:106px;right:14px;min-width:244px;max-width:calc(100vw - 26px);background:rgba(10,14,22,.97);border:1px solid var(--border);border-radius:12px;padding:6px;display:none;z-index:12;backdrop-filter:blur(8px);box-shadow:0 18px 45px rgba(0,0,0,.6)}
+.pl-panel{position:absolute;bottom:106px;right:14px;min-width:244px;max-width:calc(100vw - 26px);background:rgba(10,14,22,.97);border:1px solid var(--border);border-radius:12px;padding:6px;display:none;z-index:12;box-shadow:0 18px 45px rgba(0,0,0,.6)}
 .pl-panel.show{display:block}
 .pl-panel .pl-head{display:none;align-items:center;gap:8px;padding:6px 6px 9px;margin-bottom:4px;border-bottom:1px solid var(--border);font-size:12.5px;color:var(--muted)}
 .pl-panel.sub .pl-head{display:flex}
@@ -135,7 +144,7 @@ main{max-width:1300px;margin:auto;padding:calc(70px + env(safe-area-inset-top)) 
 .player-box.locked .pl-fs-corner,
 .player-box.locked .pl-panel{opacity:0 !important;pointer-events:none !important}
 .player-box.locked .pl-btn{pointer-events:none}
-.pl-lockbtn{position:absolute;top:14px;left:14px;width:44px;height:44px;border-radius:50%;border:none;background:rgba(0,0,0,.55);color:#fff;font-size:19px;cursor:pointer;z-index:8;display:none;align-items:center;justify-content:center;line-height:1;opacity:0;pointer-events:none;transition:opacity .2s,background .15s;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.pl-lockbtn{position:absolute;top:14px;left:14px;width:44px;height:44px;border-radius:50%;border:none;background:rgba(0,0,0,.55);color:#fff;font-size:19px;cursor:pointer;z-index:8;display:none;align-items:center;justify-content:center;line-height:1;opacity:0;pointer-events:none;transition:opacity .2s,background .15s}
 .pl-lockbtn:active{background:rgba(0,0,0,.8)}
 .player-box.locked .pl-lockbtn{display:flex}
 /* ẩn hẳn khi khóa; chỉ hiện khi chạm màn hình 2s rồi lại ẩn */
@@ -150,6 +159,14 @@ main{max-width:1300px;margin:auto;padding:calc(70px + env(safe-area-inset-top)) 
 .servers{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
 .server-btn{padding:7px 12px;border:1px solid var(--border);background:var(--surface2);color:var(--text);border-radius:8px;cursor:pointer;font-size:12px}
 .server-btn.active{background:linear-gradient(90deg,var(--accent),var(--accent2));border-color:transparent;font-weight:700}
+/* dropdown chọn server/luồng phát của tập đang xem */
+.server-switch{position:relative}
+.server-menu{display:none;position:absolute;top:calc(100% + 6px);right:0;min-width:200px;max-width:78vw;background:rgba(10,14,22,.97);border:1px solid var(--border);border-radius:10px;padding:5px;z-index:60;box-shadow:0 14px 40px rgba(0,0,0,.55);backdrop-filter:blur(8px)}
+.server-menu.show{display:block}
+.server-menu button{display:flex;gap:8px;align-items:center;width:100%;padding:9px 10px;background:none;border:none;color:var(--text);font-size:12.5px;cursor:pointer;border-radius:7px;text-align:left;white-space:nowrap}
+.server-menu button:hover{background:rgba(255,255,255,.08)}
+.server-menu button.cur{background:rgba(99,102,241,.18);color:#fff;font-weight:700}
+.server-menu .smt{font-size:10.5px;color:var(--muted);padding:4px 10px 6px;letter-spacing:.4px;text-transform:uppercase}
 .ep-search{display:flex;gap:6px;margin-bottom:10px}
 .ep-search input{flex:1;min-width:0;padding:8px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;outline:none}
 .ep-search input:focus{border-color:var(--accent)}
@@ -158,9 +175,9 @@ main{max-width:1300px;margin:auto;padding:calc(70px + env(safe-area-inset-top)) 
 .episodes{display:flex;flex-wrap:wrap;gap:7px;overflow-y:auto;max-height:430px;padding:2px;align-content:flex-start}
 .episodes::-webkit-scrollbar{width:8px}
 .episodes::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
-.episode{padding:8px 12px;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;cursor:pointer;font-size:12.5px;transition:.15s;flex-shrink:0}
-.episode:hover{border-color:var(--accent)}
-.episode.active{background:linear-gradient(90deg,var(--accent),var(--accent2));border-color:transparent;font-weight:700}
+.episode{padding:8px 12px;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:9px;cursor:pointer;font-size:12.5px;transition:.15s;flex-shrink:0}
+.episode:hover{border-color:var(--accent);box-shadow:0 0 12px rgba(99,102,241,.2)}
+.episode.active{background:linear-gradient(90deg,var(--accent),var(--accent2));border-color:transparent;font-weight:700;box-shadow:0 4px 14px rgba(99,102,241,.35)}
 .ep-watched{border-color:rgba(99,102,241,.5)}
 .ep-chunk{display:flex;gap:7px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
 .ep-chunk .pbtn{font-size:12px;padding:6px 11px}
@@ -248,6 +265,28 @@ h1{font-size:28px;margin-bottom:6px}
   .prow{padding:8px 9px;font-size:12.5px;gap:8px}
   .pl-panel .pl-head{padding:4px 4px 7px}
 }
+/* ===== XOAY NGANG BẰNG CSS CHO iPHONE (Safari iOS không cho lock orientation) =====
+   Chỉ áp dụng khi: màn hình dọc + đã khóa màn hình / fake-fs.
+   Ta xoay cả giao diện player 90° và hoán đổi kích thước -> trông như landscape thật. */
+.player-box.rot90{
+  position:fixed; top:0; left:0; width:100vh; height:100vw;
+  max-width:none; border-radius:0; z-index:9999;
+  transform-origin:top left;
+  transform:rotate(90deg) translateY(-100%); /* biến màn hình dọc thành ngang */
+}
+.player-box.rot90 video{ width:100%; height:100%; object-fit:contain; }
+/* chiều xoay ngược (nút home bên trái) */
+.player-box.rot90.ccw{ transform-origin:bottom left; transform:translateX(-100vh) rotate(-90deg); }
+.player-box.rot90.ccw .pl-controls{
+  padding-bottom:calc(8px + env(safe-area-inset-top));
+  padding-left:calc(12px + env(safe-area-inset-left));
+  padding-right:calc(12px + env(safe-area-inset-right));
+}
+.player-box.rot90.ccw .pl-fs-corner{
+  top:calc(8px + env(safe-area-inset-top)); right:calc(8px + env(safe-area-inset-right));
+}
+/* nền đen phủ toàn trang khi đang xoay ngang để phần dưới không lộ */
+body.pl-rot-on{ background:#000; overflow:hidden; }
 </style>
 </head>
 <body>
@@ -271,7 +310,10 @@ h1{font-size:28px;margin-bottom:6px}
          <h3 id="playingTitle">Chọn một tập để bắt đầu</h3>
          <button class="pbtn" id="prevEp">◀ Tập trước</button>
          <button class="pbtn" id="nextEp">Tập sau ▶</button>
-         <button class="pbtn" id="switchMode">🔁 Dự phòng</button>
+         <div class="server-switch" id="serverSwitch" style="display:none">
+           <button class="pbtn" id="serverSwitchBtn">🔄 Server</button>
+           <div class="server-menu" id="serverMenu"></div>
+         </div>
        </div>
        <div class="player-shell">
          <div class="player-box" id="playerBox">
@@ -398,6 +440,7 @@ const cleanUrl = u => {
 /* ================= HLS PLAYER (custom controls) ================= */
 function destroyPlayer() {
   if (hls) { try { hls.destroy(); } catch{} hls = null; }
+  clearInterval(plStallTimer); plStallTimer = null;   // dừng bộ theo dõi khựng của tập cũ
   /* chất lượng thuộc về instance HLS cũ -> xoá khi đổi tập/chế độ */
   plLevels = []; plQuality = -1;
   closeSet();
@@ -408,6 +451,10 @@ function destroyPlayer() {
   plTouchingControls = false;
   $("plDim").style.opacity = "0";      // đèn mờ chỉ áp cho video, không áp cho iframe embed
   $("playerBox").classList.remove("dragging");
+  /* giải phóng decoder + nguồn phát của video cũ TRƯỚC khi gỡ khỏi DOM.
+     Nếu chỉ remove() thì MSE/decoder cũ có thể còn treo -> xem vài tập là giật dần. */
+  const oldVideo = $("playerBox").querySelector("video");
+  if (oldVideo) { try { oldVideo.pause(); oldVideo.removeAttribute("src"); oldVideo.load(); } catch {} }
   [...$("playerBox").querySelectorAll("video,iframe,.pl-noep")].forEach(el => el.remove());
   $("playerErr").style.display = "none";
   $("plCenter").classList.remove("hide");
@@ -419,6 +466,7 @@ function destroyPlayer() {
   $("playerBox").classList.remove("locked");
   $("plUnlock").classList.remove("reveal");
   $("plLock").classList.remove("on");
+  setRotated(false);
 }
 function setOverlay(name, ep, mode) {
   $("poName").textContent = name || "";
@@ -433,6 +481,7 @@ function fmtTime(s){
 
 /* ----- custom control wiring (gắn 1 lần) ----- */
 let plVideo = null, plHideTimer = null, plSeeking = false, plSaveTimer = null;
+let plStallTimer = null;             // bộ theo dõi buffer cạn (chống khựng) của video hiện tại
 let plTouchingControls = false;      // đang chạm/giữ trên vùng điều khiển -> chưa tự ẩn
 let plLocked = false;                // khóa màn hình kiểu YouTube
 let plLockTimer = null;              // hẹn giờ ẩn nút mở khóa
@@ -571,6 +620,28 @@ function setLandscape(on){
     }
   } catch {}
 }
+/* ===== XOAY NGANG BẰNG CSS (dành cho iPhone — Safari iOS không cho lock orientation)
+   Khi thiết bị nằm dọc mà người dùng muốn "xoay ngang" (khóa màn hình),
+   ta xoay cả player 90° bằng CSS để màn hình luôn nằm ngang như yêu cầu. */
+function isPortraitNow(){
+  return window.innerHeight > window.innerWidth;
+}
+function setRotated(on){
+  const box = $("playerBox");
+  if (on && isPortraitNow()) {
+    box.classList.remove("ccw");
+    box.classList.add("rot90");
+    document.body.classList.add("pl-rot-on");
+  } else {
+    box.classList.remove("rot90", "ccw");
+    document.body.classList.remove("pl-rot-on");
+  }
+}
+/* theo dõi xoay thiết bị thật: nếu người dùng xoay ngang thủ công thì tắt CSS xoay */
+window.addEventListener("orientationchange", () => {
+  if (!$("playerBox").classList.contains("rot90")) return;
+  setTimeout(() => { if (!isPortraitNow()) setRotated(false); }, 350);
+});
 function lockScreen(){
   plLocked = true;
   const box = $("playerBox");
@@ -579,6 +650,7 @@ function lockScreen(){
   box.classList.add("locked", "hide-ui");
   $("plLock").classList.add("on");
   setLandscape(true);      // cố định xoay ngang (cần fullscreen trên đa số trình duyệt)
+  setRotated(true);        // iPhone: Safari iOS không lock được -> dùng CSS xoay ngang
   showHint("🔒 Đã khóa màn hình");
 }
 function unlockScreen(){
@@ -588,6 +660,7 @@ function unlockScreen(){
   $("plUnlock").classList.remove("reveal");
   $("plLock").classList.remove("on");
   setLandscape(false);
+  setRotated(false);
   showControls();
   showHint("🔓 Đã mở khóa");
 }
@@ -1009,7 +1082,10 @@ function wireControls(video){
   /* nhớ vị trí xem dở: lưu mỗi 5s */
   clearInterval(plSaveTimer);
   plSaveTimer = setInterval(savePos, 5000);
-  window.addEventListener("beforeunload", savePos);
+  if (!wireControls._unloadBound) {   // chỉ gắn 1 lần — tránh chồng listener qua mỗi tập
+    wireControls._unloadBound = true;
+    window.addEventListener("beforeunload", savePos);
+  }
 }
 function playDirect(urlRaw) {
   destroyPlayer();
@@ -1044,27 +1120,57 @@ function playDirect(urlRaw) {
     $("playerBox").classList.remove("hide-ui");
   };
 
-  /* ƯU TIÊN hls.js (MSE) trước — Chrome/Cốc Cốc mới (≥153) trả canPlayType("maybe")
-     cho HLS nhưng native lại không phát được stream này. Native HLS chỉ dành cho
-     iOS/Safari (nơi không có MSE hoặc thiếu Worker). */
+  /* CHỌN ĐỘNG LUỒNG PHÁT THEO THIẾT BỊ:
+     - Mobile (iOS/Android + RAM nhỏ): ưu tiên native HLS — máy có decoder phần cứng
+       riêng nên tốn CPU/pin ít hơn MSE hls.js, khựng ít hơn trên máy yếu.
+     - Desktop / mobile mạnh: hls.js (MSE) — kiểm soát buffer/ABR chi tiết hơn,
+       chống khựng tốt hơn trên mạng chập chờn. */
   const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent) ||
     (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  const isAndroid = /Android/i.test(navigator.userAgent);
+  const deviceMem = navigator.deviceMemory ? parseFloat(navigator.deviceMemory) : 8;
+  const nativeHlsOk = video.canPlayType("application/vnd.apple.mpegurl");
+  const weakDevice = (isAndroid || isIOS) && deviceMem > 0 && deviceMem <= 4;
+  const useNative = (isIOS || weakDevice) && nativeHlsOk;
 
+  if (useNative) {
+    /* Native HLS (iOS Safari, Android yếu): để máy tự decode phần cứng */
+    video.src = url;
+    video.onerror = tryEmbed;
+    video.addEventListener("loadedmetadata", () => { applyRate(); renderSettings(); }, { once: true });
+    video.play().catch(() => {});
+    return;
+  }
+
+  /* Adaptive theo thiết bị: máy yếu dùng buffer nhỏ hơn đỡ chiếm RAM,
+     máy mạnh buffer lớn để phát mượt như VLC */
+  const weak = (isAndroid && deviceMem > 0 && deviceMem <= 4) || (navigator.hardwareConcurrency || 8) <= 2;
   if (window.Hls && Hls.isSupported()) {
     hls = new Hls({
-    /* buffer lớn để phát mượt như VLC, không khựng khi mạng chập chờn */
-    maxBufferLength: 60,
-    maxMaxBufferLength: 120,
-    maxBufferSize: 80 * 1000 * 1000,
-    backBufferLength: 90,
+    /* Không tải phân giải cao hơn khung hình hiển thị -> giảm băng thông, ít khựng hơn
+       (VD: player nhỏ trên điện thoại sẽ không kéo 1080p vô ích) */
+    capLevelToPlayerSize: true,
+    maxBufferLength: weak ? 30 : 60,
+    maxMaxBufferLength: weak ? 60 : 120,
+    maxBufferSize: (weak ? 40 : 80) * 1000 * 1000,
+    /* đệm phía sau giữ vừa phải -> nhẹ RAM, giảm GC (nguyên nhân giật định kỳ) */
+    backBufferLength: weak ? 15 : 30,
     startLevel: -1,               // tự chọn chất lượng theo mạng
-    abrEwmaDefaultEstimate: 1_000_000,
+    abrEwmaDefaultEstimate: weak ? 600_000 : 1_000_000,
     enableWorker: true,
     lowLatencyMode: false,
     /* kiên nhẫn hơn với mạng yếu: retry nhiều lần trước khi bỏ */
     fragLoadingMaxRetry: 6,
     manifestLoadingMaxRetry: 4,
-    levelLoadingMaxRetry: 6
+    levelLoadingMaxRetry: 6,
+    /* mượt hơn khi tái đệm / chuyển chất lượng */
+    abrBandWidthFactor: 0.9,        // dám dùng gần hết băng thông đo được
+    abrBandWidthUpFactor: 0.7,      // LÊN chất lượng chậm lại -> hạn chế vừa lên đã khựng rồi tụt
+    startFragPrefetch: true,        // tải fragment đầu ngay cả khi chưa play -> giảm thời gian chờ
+    testBandwidth: true,            // đo băng thông thật để ABR chính xác hơn
+    nudgeMaxRetry: 10,              // chống video đứng hình mà không báo lỗi
+    maxStarvationDelay: 4,
+    maxLoadingDelay: 4
   });
   hls.loadSource(url);
   hls.attachMedia(video);
@@ -1091,6 +1197,27 @@ function playDirect(urlRaw) {
     }
     tryEmbed();
   });
+  /* chống khựng: chỉ hạ mức TẢI KẾ TIẾP (nextLevel) — KHÔNG khóa ABR như currentLevel
+     (currentLevel != -1 sẽ tắt hẳn tự động chọn chất lượng, khiến hình kẹt ở 1 mức).
+     Tôn trọng lựa chọn tay của người dùng: nếu currentLevel != -1 thì không can thiệp. */
+  const dropLoadLevel = () => {
+    if (!hls || !hls.levels || hls.currentLevel !== -1) return;
+    try {
+      const base = hls.loadLevel >= 0 ? hls.loadLevel : (hls.nextLevel >= 0 ? hls.nextLevel : 0);
+      hls.nextLevel = Math.max(0, base - 1);
+    } catch {}
+  };
+  const onStall = () => { if (!video.paused && !video.ended) dropLoadLevel(); };
+  video.addEventListener("waiting", onStall);
+  video.addEventListener("stalled", onStall);
+  /* lưới an toàn tần suất thấp: chỉ can thiệp khi đệm cạn thật sự */
+  clearInterval(plStallTimer);
+  plStallTimer = setInterval(() => {
+    if (video.paused || video.ended) return;
+    const buffered = video.buffered;
+    const ahead = buffered.length ? buffered.end(buffered.length - 1) - video.currentTime : 0;
+    if (ahead < 0.5) dropLoadLevel();
+  }, 5000);
   return;   // đã dùng hls.js, không rơi xuống native
   }
 
@@ -1130,18 +1257,62 @@ function playDirectFromEmbed(url) {
 }
 
 /* ================= PLAYBACK FLOW ================= */
+/* Luồng phát của tập đang chọn: [0] = m3u8 (ưu tiên), [1..n] = embed (Server 1, 2, ...) */
+function streamsOf(ep) {
+  if (!ep) return [];
+  const out = [];
+  const m = cleanUrl(ep.link_m3u8);
+  if (m && /^https?:\/\//.test(m)) out.push({ type: "m3u8", url: m });
+  for (const e of (ep.embeds || [])) {
+    const u = cleanUrl(e);
+    if (u && /^https?:\/\//.test(u)) out.push({ type: "embed", url: u });
+  }
+  const old = cleanUrl(ep.link_embed);
+  if (old && /^https?:\/\//.test(old) && !out.some(s => s.url === old)) out.push({ type: "embed", url: old });
+  return out;
+}
+let currentStreams = [];   // luồng khả dụng của tập đang phát
+let currentStreamIdx = 0;  // luồng đang dùng (0 = m3u8 nếu có)
+
+function playCurrentStream() {
+  if (!currentStreams.length) {
+    const msg = document.createElement("div");
+    msg.className = "pl-noep";
+    msg.textContent = "Không có link phát cho tập này.";
+    $("playerBox").appendChild(msg);
+    return;
+  }
+  const s = currentStreams[currentStreamIdx];
+  setOverlay(movie?.name || "", currentEp?.name, s.type === "m3u8" ? "m3u8" : "embed");
+  if (s.type === "m3u8") playDirect(s.url);
+  else playEmbed(s.url);
+}
+/* đổi luồng (Server 1, 2, ...) không cần load lại tập */
+function switchStream(idx) {
+  if (idx < 0 || idx >= currentStreams.length || !currentEp) return;
+  currentStreamIdx = idx;
+  playCurrentStream();
+  updateButtons();
+  showHint("🔄 Đã chuyển sang " + streamLabel(idx));
+}
+function streamLabel(idx) {
+  const s = currentStreams[idx];
+  if (!s) return "";
+  return s.type === "m3u8" ? "Server 1 (m3u8)" : "Server " + (idx + 1);
+}
 function playEpisode(ep, idx) {
   if (!ep) return;
   currentEp = ep;
   currentEpIdx = (idx !== undefined) ? idx :
     serverLists.findIndex(e => e === ep || (ep.slug && e.slug === ep.slug) || e.name === ep.name);
-  useDirect = !!cleanUrl(ep.link_m3u8);
+  currentStreams = streamsOf(ep);
+  currentStreamIdx = 0;           // mặc định: m3u8 nếu có, không thì embed đầu tiên
+  useDirect = currentStreams[0]?.type === "m3u8";
   $("playingTitle").textContent =
     `Đang phát: ${movie?.name || ""} — ${ep.name || "Tập ?"}`;
   updateButtons();
   markWatched(ep);
-  if (useDirect) playDirect(ep.link_m3u8);
-  else playEmbed(cleanUrl(ep.link_embed));
+  playCurrentStream();
   saveHistory(ep);
   renderEpisodes();
   $("watchCard").scrollIntoView({ behavior: "smooth", block: "start" });
@@ -1155,15 +1326,32 @@ function playPrevEp() {
 function updateButtons() {
   $("prevEp").disabled = currentEpIdx <= 0;
   $("nextEp").disabled = currentEpIdx >= serverLists.length - 1;
-  $("switchMode").textContent = useDirect ? "🔁 Dự phòng (embed)" : "🔁 Về m3u8";
+  /* dropdown chọn server: hiện TẤT CẢ luồng của tập đang xem (m3u8 + các embed) */
+  const wrap = $("serverSwitch"), menu = $("serverMenu");
+  if (currentStreams.length > 1) {
+    menu.innerHTML = '<div class="smt">Server phát</div>';
+    currentStreams.forEach((s, i) => {
+      const b = document.createElement("button");
+      if (i === currentStreamIdx) b.className = "cur";
+      b.textContent = (i === 0 && s.type === "m3u8" ? "⚡ " : "🔸 ")
+        + (s.type === "m3u8" ? "Server 1 · m3u8 (nhanh)" : "Server " + (i + 1) + " · embed");
+      b.onclick = e => { e.stopPropagation(); menu.classList.remove("show"); switchStream(i); };
+      menu.appendChild(b);
+    });
+    wrap.style.display = "";
+    $("serverSwitchBtn").textContent = `🔄 ${streamLabel(currentStreamIdx)}`;
+  } else {
+    wrap.style.display = "none";
+  }
 }
 function switchMode() {
-  if (!currentEp) return;
-  useDirect = !useDirect;
-  if (useDirect && cleanUrl(currentEp.link_m3u8)) playDirectFromEmbed(currentEp.link_m3u8);
-  else playEmbed(cleanUrl(currentEp.link_embed));
-  updateButtons();
+  if (!currentStreams.length) return;
+  $("serverMenu").classList.toggle("show");
 }
+/* đóng menu khi bấm ra ngoài */
+document.addEventListener("click", e => {
+  if (!e.target.closest("#serverSwitch")) $("serverMenu").classList.remove("show");
+});
 function saveHistory(ep) {
   try {
     const h = JSON.parse(localStorage.getItem("filmlo_history") || "[]")
@@ -1254,7 +1442,8 @@ function relCardHTML(x) {
 }
 async function loadRelated(m) {
   try {
-    const cat = (m.category || [])[0]?.slug;
+    /* KKPhim: m.category = [{name, slug}] | Nguonc: m.category = "Hành Động, Phiêu Lưu" */
+    const cat = Array.isArray(m.category) ? m.category[0]?.slug : null;
     if (!cat) return;
     const res = await fetch(`/api/category/${encodeURIComponent(cat)}?page=1`);
     if (!res.ok) return;
@@ -1278,14 +1467,14 @@ $("plSetBack").onclick = e => { e.stopPropagation(); openSet(""); };
 document.addEventListener("click", e => { if (!e.target.closest(".pl-set,.pl-panel")) closeSet(); });
 
 /* thanh Filmlo luôn cố định trên đầu trang */
-$("switchMode").onclick = switchMode;
+$("serverSwitchBtn").onclick = switchMode;
 $("prevEp").onclick = playPrevEp;
 $("nextEp").onclick = playNextEp;
 $("epGo").onclick = () => {
   const n = parseInt(($("epSearch").value || "").replace(/\D/g, ""), 10);
   if (!n) return;
   const found = serverLists.findIndex(ep =>
-    String(ep.name).replace(/\D/g, "") === String(n) ||
+    (parseInt(String(ep.name).replace(/\D/g, ""), 10) || -1) === n ||
     ep.slug === `tap-${String(n).padStart(2, "0")}`);
   if (found >= 0) {
     chunkStart = Math.floor(found / CHUNK) * CHUNK;
@@ -1366,21 +1555,26 @@ if (!slug) {
       servers.forEach((s, i) => {
         const b = document.createElement("button");
         b.className = "server-btn" + (i === 0 ? " active" : "");
-        b.textContent = `📦 ${s.server_name || "Server " + (i + 1)}`;
+        /* server đã được gộp theo ngôn ngữ ở backend (Vietsub / Thuyết Minh / Lồng Tiếng) */
+        b.textContent = `🎬 ${s.server_name || "Server " + (i + 1)}`;
         b.onclick = () => pickServer(i);
         tabs.appendChild(b);
       });
       pickServer(0);
 
-      // tự tiếp tục tập đang xem dở
+      // tự tiếp tục tập đang xem dở; nếu CHƯA xem lần nào -> tự chạy tập 1
       try {
         const hist = JSON.parse(localStorage.getItem("filmlo_history") || "[]");
         const mine = hist.find(x => x.slug === slug);
         if (mine?.ep) {
           const epIdx = serverLists.findIndex(e => e.name === mine.ep);
           if (epIdx >= 0) playEpisode(serverLists[epIdx], epIdx);
+        } else if (serverLists.length) {
+          playEpisode(serverLists[0], 0);   // chưa từng xem -> tự phát tập 1
         }
-      } catch {}
+      } catch {
+        if (serverLists.length) playEpisode(serverLists[0], 0);
+      }
 
       loadRelated(m);
 

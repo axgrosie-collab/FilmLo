@@ -7,66 +7,78 @@
 <title>Filmlo — Xem phim miễn phí</title>
 <style>
 :root{
-  --bg:#0b0f17;--surface:#131a26;--surface2:#1a2332;--border:#24304a;
-  --text:#e8edf6;--muted:#8b96ab;--accent:#6366f1;--accent2:#a855f7;
+  --bg:#080a12;--surface:#10151f;--surface2:#1a2232;--border:#253352;
+  --text:#eef2fa;--muted:#93a0b8;--accent:#6366f1;--accent2:#c084fc;
+  --glow:rgba(99,102,241,.35);
 }
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);color:var(--text);font-family:"Segoe UI",system-ui,Arial,sans-serif}
+html{scroll-behavior:smooth}
+body{background:
+  radial-gradient(ellipse 80% 50% at 50% -10%, rgba(99,102,241,.14), transparent 60%),
+  radial-gradient(ellipse 60% 40% at 85% 20%, rgba(192,132,252,.08), transparent 60%),
+  var(--bg);
+  color:var(--text);font-family:"Segoe UI",system-ui,Arial,sans-serif;min-height:100vh}
 a{color:inherit}
 
-header{background:rgba(11,15,23,.94);border-bottom:1px solid var(--border);position:fixed;top:0;left:0;width:100%;box-sizing:border-box;z-index:50;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);padding-top:env(safe-area-inset-top)}
-.top{max-width:1300px;margin:auto;padding:14px 24px;display:flex;align-items:center;gap:24px}
-.logo{font-size:22px;font-weight:800;text-decoration:none;background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent}
-nav{display:flex;gap:4px}
-nav a{color:var(--muted);text-decoration:none;font-size:13.5px;padding:8px 13px;border-radius:8px;white-space:nowrap}
+header{background:rgba(8,10,18,.82);border-bottom:1px solid rgba(37,51,82,.6);position:fixed;top:0;left:0;width:100%;box-sizing:border-box;z-index:50;backdrop-filter:blur(18px) saturate(1.3);-webkit-backdrop-filter:blur(18px) saturate(1.3);padding-top:env(safe-area-inset-top)}
+.top{max-width:1300px;margin:auto;padding:13px 24px;display:flex;align-items:center;gap:22px}
+.logo{font-size:23px;font-weight:800;text-decoration:none;background:linear-gradient(90deg,#818cf8,var(--accent2) 55%,#f472b6);-webkit-background-clip:text;background-clip:text;color:transparent;letter-spacing:-.5px;filter:drop-shadow(0 0 14px var(--glow))}
+nav{display:flex;gap:3px}
+nav a{color:var(--muted);text-decoration:none;font-size:13.5px;padding:8px 13px;border-radius:9px;white-space:nowrap;transition:.18s}
 nav a:hover{color:var(--text);background:var(--surface2)}
-nav a.active{color:var(--text);background:var(--surface2);font-weight:600}
+nav a.active{color:#fff;background:linear-gradient(90deg,rgba(99,102,241,.28),rgba(192,132,252,.22));box-shadow:inset 0 0 0 1px rgba(129,140,248,.4);font-weight:600}
 
 .search-wrap{margin-left:auto;position:relative;width:280px}
-.search-wrap input{width:100%;padding:10px 14px 10px 38px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:13.5px;outline:none}
-.search-wrap input:focus{border-color:var(--accent)}
-.search-wrap::before{content:"🔍";position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:13px;opacity:.6}
-.suggest{position:absolute;top:calc(100% + 6px);left:0;right:0;background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;display:none;box-shadow:0 20px 50px rgba(0,0,0,.6);max-height:420px;overflow-y:auto}
+.search-wrap input{width:100%;padding:10px 14px 10px 38px;background:rgba(16,21,31,.75);border:1px solid var(--border);border-radius:12px;color:var(--text);font-size:13.5px;outline:none;transition:.2s}
+.search-wrap input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(99,102,241,.18)}
+.search-wrap::before{content:"🔍";position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:13px;opacity:.55;pointer-events:none}
+.suggest{position:absolute;top:calc(100% + 6px);left:0;right:0;background:rgba(16,21,31,.97);border:1px solid var(--border);border-radius:14px;overflow:hidden;display:none;box-shadow:0 22px 60px rgba(0,0,0,.7);max-height:420px;overflow-y:auto;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
 .suggest.show{display:block}
-.sg-item{display:flex;gap:10px;padding:9px 12px;cursor:pointer;align-items:center}
+.sg-item{display:flex;gap:10px;padding:9px 12px;cursor:pointer;align-items:center;transition:.15s}
 .sg-item:hover{background:var(--surface2)}
-.sg-item img{width:38px;height:56px;object-fit:cover;border-radius:6px;flex-shrink:0;background:var(--surface2)}
+.sg-item img{width:38px;height:56px;object-fit:cover;border-radius:7px;flex-shrink:0;background:var(--surface2)}
 .sg-item .t{font-size:13px;font-weight:600;line-height:1.3}
 .sg-item .s{font-size:11.5px;color:var(--muted);margin-top:2px}
 .sg-empty{padding:16px;text-align:center;color:var(--muted);font-size:13px}
 
-.hero{max-width:1300px;margin:auto;padding:calc(26px + 74px + env(safe-area-inset-top)) 24px 8px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
-.hero h1{font-size:22px}
+.hero{max-width:1300px;margin:auto;padding:calc(30px + 74px + env(safe-area-inset-top)) 24px 10px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.hero h1{font-size:26px;font-weight:800;background:linear-gradient(90deg,#e8edf6,#b6c2ff 70%,#d8b4fe);-webkit-background-clip:text;background-clip:text;color:transparent;letter-spacing:-.4px}
 .hero .count{font-size:12.5px;color:var(--muted)}
 
-.btn-ghost{margin-left:auto;background:var(--surface);border:1px solid var(--border);color:var(--text);padding:9px 16px;border-radius:10px;cursor:pointer;font-size:13px}
-.btn-ghost:hover{border-color:var(--accent)}
+.btn-ghost{margin-left:auto;background:rgba(16,21,31,.7);border:1px solid var(--border);color:var(--text);padding:9px 16px;border-radius:11px;cursor:pointer;font-size:13px;transition:.2s;backdrop-filter:blur(8px)}
+.btn-ghost:hover{border-color:var(--accent);box-shadow:0 0 0 3px rgba(99,102,241,.14)}
 
 /* filter panel */
-.filter-panel{max-width:1300px;margin:14px auto 0;padding:18px 24px;background:var(--surface);border:1px solid var(--border);border-radius:14px;display:none}
-.filter-panel.open{display:block}
+.filter-panel{max-width:1300px;margin:14px auto 0;padding:18px 24px;background:rgba(16,21,31,.8);border:1px solid var(--border);border-radius:16px;display:none;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+.filter-panel.open{display:block;animation:slideDown .22s ease}
+@keyframes slideDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
 .f-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center}
 .f-label{font-size:12px;color:var(--muted);width:80px;flex-shrink:0}
-.f-chip{padding:6px 13px;border-radius:20px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:12.5px;cursor:pointer}
+.f-chip{padding:6px 13px;border-radius:20px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:12.5px;cursor:pointer;transition:.15s}
 .f-chip:hover{color:var(--text);border-color:var(--accent)}
-.f-chip.active{background:linear-gradient(90deg,var(--accent),var(--accent2));border-color:transparent;color:#fff;font-weight:600}
+.f-chip.active{background:linear-gradient(90deg,var(--accent),var(--accent2));border-color:transparent;color:#fff;font-weight:600;box-shadow:0 4px 14px var(--glow)}
 .f-actions{display:flex;gap:10px;margin-top:4px}
-.btn-apply{background:linear-gradient(90deg,var(--accent),var(--accent2));border:none;color:#fff;padding:9px 22px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:600}
-.btn-clear{background:transparent;border:1px solid var(--border);color:var(--muted);padding:9px 18px;border-radius:10px;cursor:pointer;font-size:13px}
+.btn-apply{background:linear-gradient(90deg,var(--accent),var(--accent2));border:none;color:#fff;padding:9px 22px;border-radius:11px;cursor:pointer;font-size:13px;font-weight:600;box-shadow:0 6px 18px var(--glow);transition:.2s}
+.btn-apply:hover{transform:translateY(-1px);box-shadow:0 8px 24px var(--glow)}
+.btn-clear{background:transparent;border:1px solid var(--border);color:var(--muted);padding:9px 18px;border-radius:11px;cursor:pointer;font-size:13px;transition:.15s}
+.btn-clear:hover{color:var(--text);border-color:var(--border)}
 
-.grid{max-width:1300px;margin:22px auto;padding:0 24px;display:grid;grid-template-columns:repeat(auto-fill,minmax(158px,1fr));gap:18px}
-.card{background:var(--surface);border-radius:12px;overflow:hidden;cursor:pointer;transition:.2s;border:1px solid transparent;position:relative}
-.card:hover{transform:translateY(-5px);border-color:var(--accent);box-shadow:0 14px 34px rgba(0,0,0,.5)}
-.card img{width:100%;aspect-ratio:2/3;object-fit:cover;display:block;background:var(--surface2)}
-.badge{position:absolute;top:8px;left:8px;background:rgba(0,0,0,.75);color:#ffd166;font-size:10.5px;font-weight:700;padding:3px 8px;border-radius:6px}
-.epbadge{position:absolute;top:8px;right:8px;background:linear-gradient(90deg,var(--accent),var(--accent2));color:#fff;font-size:10.5px;font-weight:700;padding:3px 8px;border-radius:6px}
-.card .t{font-size:13px;font-weight:600;padding:9px 10px 2px;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.card .s{font-size:11.5px;color:var(--muted);padding:2px 10px 11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.grid{max-width:1300px;margin:24px auto;padding:0 24px;display:grid;grid-template-columns:repeat(auto-fill,minmax(158px,1fr));gap:18px}
+.card{background:var(--surface);border-radius:14px;overflow:hidden;cursor:pointer;transition:transform .22s cubic-bezier(.2,.8,.3,1),border-color .2s,box-shadow .22s;border:1px solid rgba(37,51,82,.55);position:relative}
+.card:hover{transform:translateY(-6px);border-color:rgba(129,140,248,.55);box-shadow:0 16px 40px rgba(0,0,0,.6),0 0 24px rgba(99,102,241,.14)}
+.card img{width:100%;aspect-ratio:2/3;object-fit:cover;display:block;background:var(--surface2);transition:transform .35s cubic-bezier(.2,.8,.3,1)}
+.card:hover img{transform:scale(1.055)}
+.card img{will-change:transform}
+.card::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 55%,rgba(8,10,18,.75));pointer-events:none;border-radius:inherit}
+.badge{position:absolute;top:8px;left:8px;background:rgba(5,7,12,.8);color:#ffd166;font-size:10.5px;font-weight:700;padding:3px 8px;border-radius:7px;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:2}
+.epbadge{position:absolute;top:8px;right:8px;background:linear-gradient(90deg,var(--accent),var(--accent2));color:#fff;font-size:10.5px;font-weight:700;padding:3px 8px;border-radius:7px;box-shadow:0 3px 10px var(--glow);z-index:2}
+.card .t{font-size:13px;font-weight:600;padding:9px 10px 2px;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;position:relative;z-index:2}
+.card .s{font-size:11.5px;color:var(--muted);padding:2px 10px 11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;position:relative;z-index:2}
 
-.pager{display:flex;gap:8px;justify-content:center;align-items:center;padding:10px 0 44px}
-.pager button{background:var(--surface);border:1px solid var(--border);color:var(--text);padding:9px 16px;border-radius:9px;cursor:pointer;font-size:13px}
-.pager button:disabled{opacity:.4;cursor:default}
-.pager button:not(:disabled):hover{border-color:var(--accent)}
+.pager{display:flex;gap:8px;justify-content:center;align-items:center;padding:12px 0 46px}
+.pager button{background:var(--surface);border:1px solid var(--border);color:var(--text);padding:9px 18px;border-radius:11px;cursor:pointer;font-size:13px;transition:.18s}
+.pager button:disabled{opacity:.35;cursor:default}
+.pager button:not(:disabled):hover{border-color:var(--accent);box-shadow:0 0 14px rgba(99,102,241,.2)}
 .pager .pg{font-size:13px;color:var(--muted);padding:0 8px}
 .empty{grid-column:1/-1;text-align:center;color:var(--muted);padding:60px 0}
 
@@ -123,7 +135,7 @@ nav a.active{color:var(--text);background:var(--surface2);font-weight:600}
 </header>
 
 <div class="hero">
- <h1 id="pageTitle">Phim mới cập nhật</h1>
+ <h1 id="pageTitle"><span id="homeTotal">Đang tải...</span></h1>
  <span class="count" id="pageCount"></span>
  <button class="btn-ghost" id="filterToggle">⚙️ Bộ lọc nâng cao</button>
 </div>
@@ -192,6 +204,21 @@ async function fetchItems(url){
   return j.items || j.data?.items || [];
 }
 
+/* ---------- tổng số phim (2 nguồn, trừ trùng) — chỉ tính 1 lần ---------- */
+const fmtNum = n => Number(n || 0).toLocaleString("vi-VN");
+async function loadTotal(){
+  try{
+    const r = await fetch("/api/stats");
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    const d = await r.json();
+    $("homeTotal").textContent = `Kho phim: ${fmtNum(d.total)} phim`;
+    $("pageTitle").title = `Nguồn 1: ${fmtNum(d.source1)} • Nguồn 2: ${fmtNum(d.source2)} • Trùng: ${fmtNum(d.duplicates)}`;
+  }catch{
+    $("homeTotal").textContent = "Kho phim";
+  }
+}
+loadTotal();
+
 /* ---------- load ---------- */
 async function load(){
   $("grid").innerHTML = '<div class="empty">Đang tải...</div>';
@@ -228,7 +255,7 @@ $("nav").addEventListener("click", e => {
   filterQ = "";
   page = 1;
   document.querySelectorAll("nav a").forEach(x => x.classList.toggle("active", x === a));
-  const titles = {home:"Phim mới cập nhật","phim-le":"Phim lẻ","phim-bo":"Phim bộ","hoat-hinh":"Hoạt hình","tv-shows":"TV Shows"};
+  const titles = {home:$("homeTotal")?.textContent || "Kho phim","phim-le":"Phim lẻ","phim-bo":"Phim bộ","hoat-hinh":"Hoạt hình","tv-shows":"TV Shows"};
   $("pageTitle").textContent = titles[mode] || "Danh sách phim";
   $("filterPanel").classList.remove("open");
   load();
@@ -336,7 +363,7 @@ $("clearFilter").onclick = () => {
   $("filterPanel").querySelectorAll(".f-chip").forEach(c => c.classList.remove("active"));
   $("filterPanel").querySelector('.f-chip[data-sort="modified.time"]').classList.add("active");
   mode = "home"; filterQ = ""; page = 1;
-  $("pageTitle").textContent = "Phim mới cập nhật";
+  $("pageTitle").textContent = $("homeTotal")?.textContent || "Kho phim";
   document.querySelector('nav a[data-type="home"]').classList.add("active");
   load();
 };
