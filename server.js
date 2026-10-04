@@ -195,6 +195,9 @@ const NGUONC_GATEWAYS = [
     ...(API2 ? [(u) => `${API2}${u.slice(NGUONC_ORIG.length)}`] : []),  // proxy rieng neu cau hinh
     (u) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
     (u) => `https://cors.eu.org/${u}`,
+    /* r.jina.ai: render bằng trình duyệt thật -> qua được Cloudflare JS-challenge
+       mà Nguonc bật lên với IP data center. Trả JSON như thường. */
+    (u) => `https://r.jina.ai/${u}`,
     (u) => `https://corsproxy.io/?url=${encodeURIComponent(u)}`
 ];
 let nguoncGateway = -1;   // index Ä‘ang dÃ¹ng (-1 = chÆ°a biáº¿t, auto-detect)
