@@ -1,4 +1,4 @@
-﻿﻿/**
+﻿/**
  * Filmlo â€” proxy cho phimapi.com (KKPhim API)
  * Deploy Railway: npm start (PORT do Railway cáº¥p)
  */
@@ -51,6 +51,28 @@ app.use(express.static(path.join(__dirname, "public"), {
 
 /* Healthcheck cho Railway */
 app.get("/health", (req, res) => res.status(200).json({ ok: true }));
+
+/* Chẩn đoán nguồn 2: gateway đang dùng + env đã set chưa + thử gọi 1 request */
+app.get("/api/debug-nguonc", async (req, res) => {
+    try {
+        const t0 = Date.now();
+        let ok = false, err = null, count = null, gwUsed = null;
+        try {
+            const d = await fetchJsonNguonc(`${NGUONC_ORIG}/films/phim-moi-cap-nhat?page=1`);
+            ok = true; count = (d?.items || []).length; gwUsed = nguoncGateway;
+        } catch (e) { err = e.message; gwUsed = nguoncGateway; }
+        res.json({
+            nguonc_proxy_env: process.env.NGUONC_PROXY || "(chưa set)",
+            gateway_index: gwUsed,
+            gateway_count: NGUONC_GATEWAYS.length,
+            gateway_names: NGUONC_GATEWAYS.map(f => {
+                const s = f("X_TEST_PATH_X");
+                return s === "X_TEST_PATH_X" ? "direct" : s.slice(0, 40);
+            }),
+            test_ok: ok, items: count, ms: Date.now() - t0, error: err
+        });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
 
 /* ---------- Thá»‘ng kÃª tá»•ng sá»‘ phim (2 nguá»“n, trá»« trÃ¹ng theo slug) ----------
    Nguá»“n 1 (KKPhim): tá»•ng 4 loáº¡i phim-le/phim-bo/hoat-hinh/tv-shows (tá»« params.pagination)
