@@ -1141,6 +1141,10 @@ function playDirect(urlRaw) {
   video.setAttribute("webkit-playsinline", "");
   video.setAttribute("x5-playsinline", "");  // trình duyệt X5 (Trung Quốc)
   video.setAttribute("x-webkit-airplay", "allow");
+  /* QUAN TRỌNG: phát m3u8 QUA PROXY của mình — server tải manifest, lọc bỏ
+     các segment quảng cáo (được chèn sẵn trong stream bởi CDN nguồn)
+     rồi trả manifest sạch. → không còn banner/pop-up cá độ. */
+  url = "/api/stream?url=" + encodeURIComponent(url);
   setOverlay(movie?.name || "", currentEp?.name, "m3u8");
   $("playerBox").appendChild(video);
   wireControls(video);

@@ -61,6 +61,75 @@ app.use(express.static(path.join(__dirname, "public"), {
 }));
 
 /* Healthcheck cho Railway */
+
+/* ---------- STREAM PROXY: tải m3u8, LỌC BỎ quảng cáo, trả lại ----------
+   Nguồn video chèn quảng cáo vào TRONG manifest (các segment có tiền tố
+   khác biệt như "convertv7/...", nằm giữa cặp #EXT-X-DISCONTINUITY).
+   Proxy tải manifest, xóa mọi segment quảng cáo rồi trả lại cho player.
+   Player không bao giờ tải quảng cáo → không còn pop-up/banner cá độ. */
+const AD_SEGMENT_PATTERNS = [
+    /convertv7\//,      // quảng cáo của nguồn phim1280 (chính là dạng này)
+    /\/ad\//,           // các đường dẫn kiểu .../ad/...
+    /^ad[-_.]/,         // ad-xxx.ts
+    /advert/,           // advert...
+    /doubleclick/,
+    /googlesyndication/
+];
+
+app.get("/api/stream", async (req, res) => {
+    try {
+        const url = String(req.query.url || "");
+        if (!/^https?:\/\//.test(url)) return res.status(400).json({ error: "bad url" });
+        const upstream = await fetch(url, {
+            headers: {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
+                "Referer": new URL(url).origin + "/"
+            },
+            signal: AbortSignal.timeout(15000)
+        });
+        if (!upstream.ok) return res.status(502).json({ error: "upstream " + upstream.status });
+        let body = await upstream.text();
+        if (body.includes("#EXTM3U")) {
+            /* manifest:rewrite các segment相对 thành URL tuyệt đối qua proxy của mình,
+               và LỌC BỎ các segment quảng cáo + cặp DISCONTINUITY bao quanh */
+            const base = new URL(url);
+            const lines = body.split(/\r?\n/);
+            const out = [];
+            let pendingDiscontinuities = 0;
+            let droppedSegments = 0;
+            for (const line of lines) {
+                const t = line.trim();
+                if (!t) { continue; }
+                if (t.startsWith("#")) {
+                    if (t === "#EXT-X-DISCONTINUITY") { pendingDiscontinuities++; continue; }
+                    /* các thẻ khác giữ nguyên (EXTM3U, VERSION, KEY, EXTINF...) */
+                    out.push(t);
+                    continue;
+                }
+                /* dòng segment (.ts/.m3s/.mp4) */
+                const isAd = AD_SEGMENT_PATTERNS.some(p => p.test(t));
+                if (isAd) { droppedSegments++; pendingDiscontinuities = 0; continue; }
+                /* segment hợp lệ: rewrite thành URL tuyệt đối qua proxy,
+                   để player tải đúng (kể cả URI tương đối trong playlist con) */
+                let abs;
+                try { abs = new URL(t, base).toString(); } catch { abs = t; }
+                out.push("/api/stream?url=" + encodeURIComponent(abs));
+            }
+            /* dọn các DISCONTINUITY dư ở cuối */
+            while (out.length && out[out.length - 1].startsWith("#EXT-X-DISCONTINUITY")) out.pop();
+            body = out.join("\n");
+            res.set("Cache-Control", "public, max-age=300");
+            res.set("Content-Type", "application/vnd.apple.mpegurl");
+            return res.send(body);
+        }
+        /* không phải manifest → trả nguyên (player sẽ tự xử lý) */
+        res.set("Cache-Control", "public, max-age=300");
+        return res.send(body);
+    } catch (e) {
+        console.error("stream-proxy", e.message);
+        res.status(502).json({ error: "proxy fail" });
+    }
+});
 app.get("/health", (req, res) => res.status(200).json({ ok: true }));
 
 /* ---------- Cache in-memory (TTL 5 phút) ---------- */
