@@ -16,14 +16,26 @@
 export default {
   async fetch(request) {
     const url = new URL(request.url);
-    const target = "https://phim.nguonc.com" + url.pathname + url.search;
+    /* Two modes:
+       1) /stream?url=<encoded> — for Filmlo's /api/stream (m3u8/ts/any URL)
+       2) everything else — forwards path+query to phim.nguonc.com (Nguonc relay) */
+    let target;
+    if (url.pathname === "/stream") {
+      target = url.searchParams.get("url");
+      if (!target) return new Response("missing url", { status: 400 });
+    } else {
+      target = "https://phim.nguonc.com" + url.pathname + url.search;
+    }
+
+    let referer;
+    try { referer = new URL(target).origin + "/"; } catch { referer = "https://phim.nguonc.com/"; }
 
     const resp = await fetch(target, {
       method: request.method,
       headers: {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
-        "Accept": "application/json, text/plain, */*",
-        "Referer": "https://phim.nguonc.com/"
+        "Accept": "*/*",
+        "Referer": referer
       },
       body: ["GET", "HEAD"].includes(request.method) ? undefined : request.body
     });

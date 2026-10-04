@@ -80,15 +80,40 @@ app.get("/api/stream", async (req, res) => {
     try {
         const url = String(req.query.url || "");
         if (!/^https?:\/\//.test(url)) return res.status(400).json({ error: "bad url" });
-        const upstream = await fetch(url, {
-            headers: {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
-                "Referer": new URL(url).origin + "/"
-            },
-            signal: AbortSignal.timeout(15000)
-        });
-        if (!upstream.ok) return res.status(502).json({ error: "upstream " + upstream.status });
-        let body = await upstream.text();
+        /* fetch qua 2 đường: (1) gọi thẳng, (2) worker relay nếu cấu hình.
+           CDN nguồn (phim1280...) chặn data center nước ngoài → Railway phải
+           đi qua worker Cloudflare (như cách đã xử lý với Nguonc). */
+        const referer = new URL(url).origin + "/";
+        const fetchUpstream = async (u) => {
+            const r = await fetch(u, {
+                headers: {
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
+                    "Referer": referer,
+                    "Accept": "*/*"
+                },
+                signal: AbortSignal.timeout(15000)
+            });
+            return r;
+        };
+        let upstream;
+        let body = null;
+        /* Đường 1: gọi thẳng. Lỗi → Đường 2: worker relay (nếu cấu hình).
+           CDN nguồn chặn data center nước ngoài → Railway cần worker. */
+        try {
+            upstream = await fetchUpstream(url);
+            if (!upstream.ok) throw new Error("HTTP " + upstream.status);
+            body = await upstream.text();
+        } catch (e1) {
+            if (process.env.NGUONC_PROXY) {
+                const proxied = process.env.NGUONC_PROXY.replace(/\/+$/, "")
+                    + "/stream?url=" + encodeURIComponent(url);
+                const r2 = await fetch(proxied, { signal: AbortSignal.timeout(15000) });
+                if (!r2.ok) throw new Error("upstream " + r2.status + " & worker " + e1.message);
+                body = await r2.text();
+            } else {
+                throw e1;
+            }
+        }
         if (body.includes("#EXTM3U")) {
             /* manifest:rewrite các segment相对 thành URL tuyệt đối qua proxy của mình,
                và LỌC BỎ các segment quảng cáo + cặp DISCONTINUITY bao quanh */
