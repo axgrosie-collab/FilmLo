@@ -141,7 +141,19 @@ app.get("/api/stream", async (req, res) => {
                 }
                 /* dòng segment (.ts/.m3s/.mp4) */
                 const isAd = AD_SEGMENT_PATTERNS.some(p => p.test(t));
-                if (isAd) { pendingDiscontinuities = 0; continue; }
+                if (isAd) {
+                    pendingDiscontinuities = 0;
+                    /* QUAN TRỌNG: xóa luôn #EXTINF đứng ngay trước segment quảng cáo.
+                       Nếu không, manifest còn lại EXTINF rỗng (không có segment) →
+                       playlist INVALID → native HLS trên mobile từ chối phát ngay
+                       (lỗi "không phát được m3u8" trên mọi phim). */
+                    for (let j = out.length - 1; j >= 0; j--) {
+                        if (out[j].startsWith("#EXTINF:")) { out.splice(j, 1); break; }
+                        if (out[j].startsWith("#")) continue;   // thẻ khác vẫn giữ, dừng ở segment
+                        break;
+                    }
+                    continue;
+                }
                 /* segment hợp lệ: giữ nguyên dạng tuyệt đối -> player tải thẳng CDN */
                 try { out.push(new URL(t, base).toString()); } catch { out.push(t); }
             }
