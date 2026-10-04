@@ -929,7 +929,7 @@ function wireControls(video){
     document.addEventListener("keydown", e => {
       if (e.target.tagName === "INPUT") return;
       if ($("playerBox").classList.contains("embed-mode")) return;
-      if (plLocked) {                       // khóa: chỉ cho mở khóa bằng Escape
+      if (plLocked) {
         if (e.key === "Escape") unlockScreen();
         return;
       }
@@ -943,6 +943,17 @@ function wireControls(video){
       else if (e.key === "Escape") closeSet();
     });
   }
+
+  /* khi tab bị ẩn (đổi tab/ra ngoài) — giữ buffer, không ném dữ liệu đã tải
+     -> quay lại tab phát tiếp tức thì, không phải tái đệm từ đầu */
+  document.addEventListener("visibilitychange", () => {
+    if (!plVideo || box.classList.contains("embed-mode")) return;
+    if (!document.hidden && plVideo.paused && !plVideo.ended
+        && document.fullscreenElement == null && !plVideo.muted) {
+      /* trở lại tab: nếu trình duyệt tự pause, không tự phát lại — chỉ đồng bộ UI */
+      syncMidBtn();
+    }
+  });
 
   /* ===== GESTURE MOBILE — tự xử lý trên box vì nhiều trình duyệt mobile
      không bắn 'click' trên <video> (đó là lý do tap giữa ko dừng được).
@@ -1147,30 +1158,30 @@ function playDirect(urlRaw) {
   const weak = (isAndroid && deviceMem > 0 && deviceMem <= 4) || (navigator.hardwareConcurrency || 8) <= 2;
   if (window.Hls && Hls.isSupported()) {
     hls = new Hls({
-    /* Không tải phân giải cao hơn khung hình hiển thị -> giảm băng thông, ít khựng hơn
-       (VD: player nhỏ trên điện thoại sẽ không kéo 1080p vô ích) */
+    /* Không tải phân giải cao hơn khung hình hiển thị -> giảm băng thông, ít khựng hơn */
     capLevelToPlayerSize: true,
     maxBufferLength: weak ? 30 : 60,
     maxMaxBufferLength: weak ? 60 : 120,
     maxBufferSize: (weak ? 40 : 80) * 1000 * 1000,
-    /* đệm phía sau giữ vừa phải -> nhẹ RAM, giảm GC (nguyên nhân giật định kỳ) */
     backBufferLength: weak ? 15 : 30,
-    startLevel: -1,               // tự chọn chất lượng theo mạng
+    startLevel: -1,
     abrEwmaDefaultEstimate: weak ? 600_000 : 1_000_000,
     enableWorker: true,
     lowLatencyMode: false,
-    /* kiên nhẫn hơn với mạng yếu: retry nhiều lần trước khi bỏ */
     fragLoadingMaxRetry: 6,
     manifestLoadingMaxRetry: 4,
     levelLoadingMaxRetry: 6,
-    /* mượt hơn khi tái đệm / chuyển chất lượng */
-    abrBandWidthFactor: 0.9,        // dám dùng gần hết băng thông đo được
-    abrBandWidthUpFactor: 0.7,      // LÊN chất lượng chậm lại -> hạn chế vừa lên đã khựng rồi tụt
-    startFragPrefetch: true,        // tải fragment đầu ngay cả khi chưa play -> giảm thời gian chờ
-    testBandwidth: true,            // đo băng thông thật để ABR chính xác hơn
-    nudgeMaxRetry: 10,              // chống video đứng hình mà không báo lỗi
+    abrBandWidthFactor: 0.9,
+    abrBandWidthUpFactor: 0.7,
+    startFragPrefetch: true,
+    testBandwidth: true,
+    nudgeMaxRetry: 10,
     maxStarvationDelay: 4,
-    maxLoadingDelay: 4
+    maxLoadingDelay: 4,
+    /* ⚡ tối ưu mượt hơn: thời gian chờ giữa các lần retry tăng dần (giảm đóng băng mạng)
+       và tắt chế độ progressive (tránh giật vì vẽ từng fragment ngay khi tải) */
+    fragLoadingMaxRetryTimeout: 8000,
+    progressive: false
   });
   hls.loadSource(url);
   hls.attachMedia(video);
