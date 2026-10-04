@@ -35,14 +35,17 @@ app.use((req, res, next) => {
 /* Nén gzip mọi response (HTML/JSON nặng -> nhỏ hơn 5-10 lần) */
 app.use(compression());
 
-/* ===== CHẶN QUẢNG CÁO / IFRAME ĐỐC HẠI (CSP) =====
-   - frame-src: chỉ cho phép YouTube (trailer). Các iframe embed của bên thứ 3
-     (nơi chứa quảng cáo cá độ) bị trình duyệt chặn ngay từ đầu.
-   - connect-src/img-src/style-src *: vẫn mở để tải ảnh/API/m3u8 từ các nguồn. */
+/* ===== CHẶN QUẢNG CÁO CÁ ĐỘ =====
+   Phát m3u8 bằng player của mình là chính; iframe embed (dự phòng) bị chặn
+   pop-up/redirect bằng sandbox="allow-scripts allow-same-origin allow-presentation"
+   — KHÔNG có allow-popups / allow-top-navigation nên quảng cáo không tự mở tab mới
+   hay điều hướng trang đi đâu cả. YouTube trailer vẫn hoạt động bình thường. */
 app.use((req, res, next) => {
+    /* frame-src: cho phép embed player của các nguồn (dự phòng) + YouTube trailer.
+       Quảng cáo pop-up vẫn bị chặn nhờ iframe sandbox phía client. */
     res.set("Content-Security-Policy",
-        "frame-src 'self' https://www.youtube-nocookie.com https://www.youtube.com; " +
-        "child-src 'self' https://www.youtube-nocookie.com https://www.youtube.com");
+        "frame-src 'self' https:; " +
+        "child-src 'self' https:");
     next();
 });
 

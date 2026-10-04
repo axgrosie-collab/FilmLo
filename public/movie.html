@@ -1250,10 +1250,13 @@ function playEmbed(url) {
     $("playerBox").appendChild(msg);
     return;
   }
-  /* Embed có player riêng -> ẩn UI của mình, không đè lên */
+  /* Embed có player riêng -> ẩn UI của mình, không đè lên.
+     SANDBOX: KHÔNG có allow-popups / allow-top-navigation — quảng cáo cá độ
+     (popup, redirect) bị trình duyệt chặn; video/playlist vẫn chạy bình thường. */
   $("playerBox").classList.add("embed-mode");
   const iframe = document.createElement("iframe");
   iframe.src = url;
+  iframe.setAttribute("sandbox", "allow-scripts allow-same-origin allow-presentation allow-forms");
   iframe.allowFullscreen = true;
   iframe.setAttribute("allowfullscreen", "");
   iframe.allow = "autoplay; fullscreen; encrypted-media";
@@ -1268,15 +1271,19 @@ function playDirectFromEmbed(url) {
 }
 
 /* ================= PLAYBACK FLOW ================= */
-/* Luồng phát của tập đang chọn: CHỈ M3U8 thuần.
-   KHÔNG dùng link embed của bên thứ 3 (streamc, player.phimapi...) vì chúng
-   chèn quảng cáo cá độ/pop-up bên trong iframe của chúng. m3u8 là file video
-   gốc, phát bằng player của mình → không có quảng cáo nào. */
+/* Luồng phát của tập đang chọn: m3u8 ưu tiên (sạch, không quảng cáo);
+   embed làm SERVER DỰ PHÒNG (Server 2, 3...) — khi phát embed sẽ dùng
+   sandbox KHÔNG cho phép pop-up → quảng cáo cá độ bị trình duyệt chặn. */
 function streamsOf(ep) {
   if (!ep) return [];
   const out = [];
   const m = cleanUrl(ep.link_m3u8);
   if (m && /^https?:\/\//.test(m)) out.push({ type: "m3u8", url: m });
+  const add = u => {
+    if (u && /^https?:\/\//.test(u) && !out.some(s => s.url === u)) out.push({ type: "embed", url: u });
+  };
+  for (const e of (ep.embeds || [])) add(cleanUrl(e));
+  add(cleanUrl(ep.link_embed));
   return out;
 }
 let currentStreams = [];   // luồng khả dụng của tập đang phát
@@ -1299,6 +1306,8 @@ function playCurrentStream() {
 function switchStream(idx) {
   if (idx < 0 || idx >= currentStreams.length || !currentEp) return;
   currentStreamIdx = idx;
+  /* lưu lựa chọn server cho phim này → lần xem lại / chuyển tập mở đúng server */
+  try { localStorage.setItem("filmlo_srv_" + slug, String(idx)); } catch {}
   playCurrentStream();
   updateButtons();
   showHint("🔄 Đã chuyển sang " + streamLabel(idx));
@@ -1314,8 +1323,14 @@ function playEpisode(ep, idx) {
   currentEpIdx = (idx !== undefined) ? idx :
     serverLists.findIndex(e => e === ep || (ep.slug && e.slug === ep.slug) || e.name === ep.name);
   currentStreams = streamsOf(ep);
-  currentStreamIdx = 0;           // mặc định: m3u8 nếu có, không thì embed đầu tiên
-  useDirect = currentStreams[0]?.type === "m3u8";
+  /* Nhớ server người dùng ĐÃ CHỌN cho từng phim: lần xem lại mở đúng server đó
+     (vd đang xem Server 2 của Nguonc -> tập sau/vừa mở lại vẫn dùng Server 2) */
+  let savedIdx = 0;
+  try {
+    savedIdx = parseInt(localStorage.getItem("filmlo_srv_" + slug) || "0", 10) || 0;
+  } catch {}
+  currentStreamIdx = (savedIdx < currentStreams.length) ? savedIdx : 0;
+  useDirect = currentStreams[currentStreamIdx]?.type === "m3u8";
   $("playingTitle").textContent =
     `Đang phát: ${movie?.name || ""} — ${ep.name || "Tập ?"}`;
   updateButtons();
