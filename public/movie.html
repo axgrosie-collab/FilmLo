@@ -1131,7 +1131,7 @@ function wireControls(video){
 }
 function playDirect(urlRaw) {
   destroyPlayer();
-  const url = cleanUrl(urlRaw);   // phòng hờ "Tập 01|https://..."
+  let url = cleanUrl(urlRaw);   // phòng hờ "Tập 01|https://..."
   if (!/^https?:\/\//i.test(url)) { tryEmbed(); return; }
   $("playerBox").classList.remove("embed-mode");   // m3u8: dùng lại UI của mình
   const video = document.createElement("video");
@@ -1373,7 +1373,7 @@ function playEpisode(ep, idx) {
   playCurrentStream();
   saveHistory(ep);
   renderEpisodes();
-  $("watchCard").scrollIntoView({ behavior: "smooth", block: "start" });
+  try { $("watchCard").scrollIntoView({ behavior: "smooth", block: "start" }); } catch {}
 }
 function playNextEp() {
   if (currentEpIdx + 1 < serverLists.length) playEpisode(serverLists[currentEpIdx + 1], currentEpIdx + 1);
@@ -1591,10 +1591,11 @@ if (!slug) {
         }
       }
 
-      // diễn viên + đạo diễn
+      // diễn viên + đạo diễn (director/actor có thể là string hoặc array)
+      const asArr = v => Array.isArray(v) ? v : (typeof v === "string" && v ? v.split(",") : []);
       const people = [
-        ...(m.director || []).filter(x => x && x !== "Đang cập nhật").map(n => `🎤 ${esc(n)}`),
-        ...(m.actor || []).filter(x => x && x !== "Đang cập nhật").slice(0, 12).map(n => `⭐ ${esc(n)}`)
+        ...asArr(m.director).filter(x => x && String(x).trim() !== "Đang cập nhật").map(n => `🎤 ${esc(String(n).trim())}`),
+        ...asArr(m.actor).filter(x => x && String(x).trim() !== "Đang cập nhật").slice(0, 12).map(n => `⭐ ${esc(String(n).trim())}`)
       ];
       if (people.length) {
         $("people").innerHTML = people.map(n => `<span class="person">${n}</span>`).join("");

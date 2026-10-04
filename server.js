@@ -96,25 +96,30 @@ app.get("/api/stream", async (req, res) => {
             return r;
         };
         let upstream;
-        let body = null;
+        let buf = null;      // dữ liệu NHỊ PHÂN gốc (Buffer) — không bao giờ decode text
         /* Đường 1: gọi thẳng. Lỗi → Đường 2: worker relay (nếu cấu hình).
            CDN nguồn chặn data center nước ngoài → Railway cần worker. */
         try {
             upstream = await fetchUpstream(url);
             if (!upstream.ok) throw new Error("HTTP " + upstream.status);
-            body = await upstream.text();
+            buf = Buffer.from(await upstream.arrayBuffer());
         } catch (e1) {
             if (process.env.NGUONC_PROXY) {
                 const proxied = process.env.NGUONC_PROXY.replace(/\/+$/, "")
                     + "/stream?url=" + encodeURIComponent(url);
                 const r2 = await fetch(proxied, { signal: AbortSignal.timeout(15000) });
                 if (!r2.ok) throw new Error("upstream " + r2.status + " & worker " + e1.message);
-                body = await r2.text();
+                buf = Buffer.from(await r2.arrayBuffer());
             } else {
                 throw e1;
             }
         }
-        if (body.includes("#EXTM3U")) {
+        /* QUAN TRỌNG: với segment .ts (nhị phân) KHÔNG ĐƯỢC dùng .text() —
+           decode UTF-8 làm hỏng payload video → hls.js không phát được.
+           Chỉ manifest (m3u8) mới là văn bản. */
+        const looksM3u8 = buf.slice(0, 7).toString("utf8") === "#EXTM3U";
+        if (looksM3u8) {
+            const body = buf.toString("utf8");
             /* manifest:rewrite các segment相对 thành URL tuyệt đối qua proxy của mình,
                và LỌC BỎ các segment quảng cáo + cặp DISCONTINUITY bao quanh */
             const base = new URL(url);
@@ -142,14 +147,17 @@ app.get("/api/stream", async (req, res) => {
             }
             /* dọn các DISCONTINUITY dư ở cuối */
             while (out.length && out[out.length - 1].startsWith("#EXT-X-DISCONTINUITY")) out.pop();
-            body = out.join("\n");
             res.set("Cache-Control", "public, max-age=300");
             res.set("Content-Type", "application/vnd.apple.mpegurl");
-            return res.send(body);
+            return res.send(out.join("\n"));
         }
-        /* không phải manifest → trả nguyên (player sẽ tự xử lý) */
+        /* không phải manifest → trả NGUYÊN BINARY (Buffer) nguyên vẹn.
+           res.send(Buffer) giữ nguyên từng byte và Content-Type video/mp2t,
+           tránh lỗi .text() làm hỏng dữ liệu → hls.js phát được bình thường. */
         res.set("Cache-Control", "public, max-age=300");
-        return res.send(body);
+        const ct = upstream?.headers?.get?.("content-type");
+        if (ct) res.set("Content-Type", ct);
+        return res.send(buf);
     } catch (e) {
         console.error("stream-proxy", e.message);
         res.status(502).json({ error: "proxy fail" });
