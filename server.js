@@ -502,21 +502,61 @@ function mergeServersByLang(all) {
     return out;
 }
 
-/* Ghép server Nguonc vào kết quả chi tiết phim nguồn 1 (KKPhim). */
+/* Tìm bản song sinh trong kết quả search Nguonc: TMDB id trước, sau đó TÊN NỀN
+   (baseKey — bỏ season/ngoặc/số) để bắt cùng bộ phim dù tên khác nhau. */
+function findInNguoncSearch(found, item) {
+    const type = item.tmdb?.type === "tv" || item.type === "series" ? "tv" : "movie";
+    if (item.tmdb?.id) {
+        const byTmdb = (found.items || []).find(x =>
+            (x.tmdb?.id === item.tmdb.id) &&
+            (type === "tv" ? true : x.tmdb?.type !== "tv"));
+        if (byTmdb) return byTmdb;
+    }
+    const bk = baseKey(item);
+    if (bk) {
+        const byName = (found.items || []).find(x =>
+            baseKey(x) === bk &&
+            (type === "tv" ? true : x.tmdb?.type !== "tv"));
+        if (byName) return byName;
+    }
+    return null;
+}
+
+/* Ghép server Nguonc vào kết quả chi tiết phim nguồn 1 (KKPhim).
+   Đối chiếu 3 tầng: slug -> TMDB id -> TÊN NỀN/GỐC -> TÊN HIỂN THỊ.
+   Nhờ đó khi người xem mở 1 thẻ (đã gộp 1 thẻ duy nhất ở danh sách),
+   họ nhận được TOÀN BỘ server của CẢ HAI nguồn trong bảng chọn Server. */
 async function mergeNguonc(req, episodes, item) {
     try {
         let m2 = null;
         try { m2 = await fetchJsonNguonc(`${API2}/film/${encodeURIComponent(req.params.slug)}`); }
-        catch { /* slug không trùng — thử tiếp theo TMDB */ }
+        catch { /* slug không trùng — thử tiếp các tầng dưới */ }
         if (!m2?.movie && item?.tmdb?.id) {
-            const type = item.tmdb.type === "tv" || item.type === "series" ? "tv" : "movie";
             try {
                 const found = await fetchJsonNguonc(
                     `${API2}/films/search?keyword=${encodeURIComponent(String(item.tmdb.id))}&page=1`
                 );
-                const hit = (found.items || []).find(x =>
-                    (x.tmdb?.id === item.tmdb.id) &&
-                    (type === "tv" ? true : x.tmdb?.type !== "tv"));
+                const hit = findInNguoncSearch(found, item);
+                if (hit) m2 = await fetchJsonNguonc(`${API2}/film/${encodeURIComponent(hit.slug)}`);
+            } catch { /* bỏ qua */ }
+        }
+        /* TÊN GỐC (origin_name): bắt bản song sinh mà TMDB của 1 trong 2 nguồn thiếu */
+        if (!m2?.movie && item.origin_name) {
+            try {
+                const found = await fetchJsonNguonc(
+                    `${API2}/films/search?keyword=${encodeURIComponent(item.origin_name)}&page=1`
+                );
+                const hit = findInNguoncSearch(found, item);
+                if (hit) m2 = await fetchJsonNguonc(`${API2}/film/${encodeURIComponent(hit.slug)}`);
+            } catch { /* bỏ qua */ }
+        }
+        /* TÊN HIỂN THỊ (name): nguồn 2 đôi khi chỉ có tên tiếng Việt */
+        if (!m2?.movie && item.name && item.name !== item.origin_name) {
+            try {
+                const found = await fetchJsonNguonc(
+                    `${API2}/films/search?keyword=${encodeURIComponent(item.name)}&page=1`
+                );
+                const hit = findInNguoncSearch(found, item);
                 if (hit) m2 = await fetchJsonNguonc(`${API2}/film/${encodeURIComponent(hit.slug)}`);
             } catch { /* bỏ qua */ }
         }
