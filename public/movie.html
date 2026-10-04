@@ -1268,18 +1268,15 @@ function playDirectFromEmbed(url) {
 }
 
 /* ================= PLAYBACK FLOW ================= */
-/* Luồng phát của tập đang chọn: [0] = m3u8 (ưu tiên), [1..n] = embed (Server 1, 2, ...) */
+/* Luồng phát của tập đang chọn: CHỈ M3U8 thuần.
+   KHÔNG dùng link embed của bên thứ 3 (streamc, player.phimapi...) vì chúng
+   chèn quảng cáo cá độ/pop-up bên trong iframe của chúng. m3u8 là file video
+   gốc, phát bằng player của mình → không có quảng cáo nào. */
 function streamsOf(ep) {
   if (!ep) return [];
   const out = [];
   const m = cleanUrl(ep.link_m3u8);
   if (m && /^https?:\/\//.test(m)) out.push({ type: "m3u8", url: m });
-  for (const e of (ep.embeds || [])) {
-    const u = cleanUrl(e);
-    if (u && /^https?:\/\//.test(u)) out.push({ type: "embed", url: u });
-  }
-  const old = cleanUrl(ep.link_embed);
-  if (old && /^https?:\/\//.test(old) && !out.some(s => s.url === old)) out.push({ type: "embed", url: old });
   return out;
 }
 let currentStreams = [];   // luồng khả dụng của tập đang phát

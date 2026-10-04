@@ -83,29 +83,43 @@ nav a.active{color:#fff;background:linear-gradient(90deg,rgba(99,102,241,.28),rg
 .empty{grid-column:1/-1;text-align:center;color:var(--muted);padding:60px 0}
 
 @media(max-width:860px){
-  .top{flex-wrap:wrap;gap:10px;padding:12px 14px}
+  .top{flex-wrap:wrap;gap:8px;padding:10px 12px}
   .search-wrap{margin-left:0;width:100%;order:3}
-  nav{overflow-x:auto;width:100%;order:2;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .search-wrap input{padding:11px 14px 11px 38px;font-size:15px;border-radius:11px}  /* 15px: iOS không tự zoom */
+  nav{overflow-x:auto;width:100%;order:2;-webkit-overflow-scrolling:touch;scrollbar-width:none;gap:1px}
   nav::-webkit-scrollbar{display:none}
-  nav a{padding:8px 11px;font-size:13px}
-  .hero{padding:calc(18px + 118px + env(safe-area-inset-top)) 14px 4px;gap:10px}
-  .hero h1{font-size:18px}
-  .btn-ghost{margin-left:auto;padding:8px 12px;font-size:12.5px}
-  .filter-panel{margin:10px 14px 0;padding:14px}
+  nav a{padding:10px 13px;font-size:13px}   /* vùng chạm >= 44px */
+  .hero{padding:calc(16px + 108px + env(safe-area-inset-top)) 12px 4px;gap:8px}
+  .hero h1{font-size:17px}
+  .btn-ghost{margin-left:auto;padding:9px 13px;font-size:12.5px}
+  .filter-panel{margin:10px 12px 0;padding:13px 12px}
   .f-label{width:100%}
   .f-row{gap:6px}
-  .f-chip{padding:7px 12px;font-size:12px}
-  .btn-apply,.btn-clear{flex:1}
-  .grid{margin:16px auto;padding:0 12px;grid-template-columns:repeat(3,1fr);gap:10px}
-  .card .t{font-size:12px;padding:7px 8px 2px}
+  .f-chip{padding:9px 13px;font-size:12.5px}  /* chip dễ bấm hơn */
+  .btn-apply,.btn-clear{flex:1;padding:11px}
+  .grid{margin:14px auto;padding:0 10px;grid-template-columns:repeat(3,1fr);gap:9px}
+  /* badge nhỏ lại + không đè lên chữ tên phim */
+  .badge,.epbadge{font-size:9px;padding:2px 6px;top:6px}
+  .badge{left:6px}.epbadge{right:6px}
+  .card{border-radius:11px}
+  .card img{border-radius:10px 10px 0 0}
+  .card .t{font-size:12px;padding:7px 8px 2px;-webkit-line-clamp:2}
   .card .s{font-size:10.5px;padding:2px 8px 9px}
-  .pager{padding:10px 0 30px}
-  .pager button{padding:10px 18px}
-  #historySec{padding:0 14px !important;margin-bottom:0 !important}
-  #historyRow .card{min-width:110px !important;width:110px !important}
+  .pager{padding:12px 0 34px;gap:6px}
+  .pager button{padding:11px 16px;font-size:12.5px}
+  .pager .pg{font-size:12px}
+  .empty{padding:44px 16px;font-size:13px}
+  #historySec{padding:0 10px !important;margin-bottom:0 !important}
+  #historySec h2{font-size:14px}
+  #historyRow .card{min-width:104px !important;width:104px !important}
+  #historyRow{gap:8px}
+  .sg-item{padding:10px 12px}
+  .sg-item img{width:42px;height:62px}
+  .suggest{max-height:56vh}
 }
 @media(max-width:380px){
-  .grid{grid-template-columns:repeat(2,1fr)}
+  .grid{grid-template-columns:repeat(2,1fr);gap:8px}
+  .card .t{font-size:11.5px}
 }
 /* mobile: highlight rõ hơn khi chạm */
 @media(hover:none){

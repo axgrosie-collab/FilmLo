@@ -35,6 +35,17 @@ app.use((req, res, next) => {
 /* Nén gzip mọi response (HTML/JSON nặng -> nhỏ hơn 5-10 lần) */
 app.use(compression());
 
+/* ===== CHẶN QUẢNG CÁO / IFRAME ĐỐC HẠI (CSP) =====
+   - frame-src: chỉ cho phép YouTube (trailer). Các iframe embed của bên thứ 3
+     (nơi chứa quảng cáo cá độ) bị trình duyệt chặn ngay từ đầu.
+   - connect-src/img-src/style-src *: vẫn mở để tải ảnh/API/m3u8 từ các nguồn. */
+app.use((req, res, next) => {
+    res.set("Content-Security-Policy",
+        "frame-src 'self' https://www.youtube-nocookie.com https://www.youtube.com; " +
+        "child-src 'self' https://www.youtube-nocookie.com https://www.youtube.com");
+    next();
+});
+
 /* Static: HTML không cache (deploy mới có hiệu lực ngay), JS lib cache lâu */
 app.use(express.static(path.join(__dirname, "public"), {
     setHeaders(res, filePath) {
