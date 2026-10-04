@@ -1341,8 +1341,10 @@ function playCurrentStream() {
 function switchStream(idx) {
   if (idx < 0 || idx >= currentStreams.length || !currentEp) return;
   currentStreamIdx = idx;
-  /* lưu lựa chọn server cho phim này → lần xem lại / chuyển tập mở đúng server */
-  try { localStorage.setItem("filmlo_srv_" + slug, String(idx)); } catch {}
+  /* lưu lựa chọn server theo PHIM + TAB đang chọn (Vietsub/Lồng Tiếng...):
+     tránh lỗi khi chuyển tab -> áp nhầm stream đã lưu của tab khác
+     (vd đang xem tab Lồng Tiếng nhưng lại mở stream Vietsub đã lưu). */
+  try { localStorage.setItem("filmlo_srv_" + slug + "_" + activeServer, String(idx)); } catch {}
   playCurrentStream();
   updateButtons();
   showHint("🔄 Đã chuyển sang " + streamLabel(idx));
@@ -1358,11 +1360,11 @@ function playEpisode(ep, idx) {
   currentEpIdx = (idx !== undefined) ? idx :
     serverLists.findIndex(e => e === ep || (ep.slug && e.slug === ep.slug) || e.name === ep.name);
   currentStreams = streamsOf(ep);
-  /* Nhớ server người dùng ĐÃ CHỌN cho từng phim: lần xem lại mở đúng server đó
-     (vd đang xem Server 2 của Nguonc -> tập sau/vừa mở lại vẫn dùng Server 2) */
+  /* Nhớ server người dùng ĐÃ CHỌN cho từng phim + từng tab (Vietsub/Lồng Tiếng...):
+     chuyển tab sẽ dùng đúng stream đã lưu của tab đó, không bị nhảy lung tung */
   let savedIdx = 0;
   try {
-    savedIdx = parseInt(localStorage.getItem("filmlo_srv_" + slug) || "0", 10) || 0;
+    savedIdx = parseInt(localStorage.getItem("filmlo_srv_" + slug + "_" + activeServer) || "0", 10) || 0;
   } catch {}
   currentStreamIdx = (savedIdx < currentStreams.length) ? savedIdx : 0;
   useDirect = currentStreams[currentStreamIdx]?.type === "m3u8";

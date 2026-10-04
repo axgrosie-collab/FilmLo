@@ -68,7 +68,7 @@ app.use(express.static(path.join(__dirname, "public"), {
    Proxy tải manifest, xóa mọi segment quảng cáo rồi trả lại cho player.
    Player không bao giờ tải quảng cáo → không còn pop-up/banner cá độ. */
 const AD_SEGMENT_PATTERNS = [
-    /convertv7\//,      // quảng cáo của nguồn phim1280 (chính là dạng này)
+    /convertv\d+\//,    // quảng cáo của nguồn phim1280 (convertv7, convertv8, ...)
     /\/ad\//,           // các đường dẫn kiểu .../ad/...
     /^ad[-_.]/,         // ad-xxx.ts
     /advert/,           // advert...
@@ -120,30 +120,30 @@ app.get("/api/stream", async (req, res) => {
         const looksM3u8 = buf.slice(0, 7).toString("utf8") === "#EXTM3U";
         if (looksM3u8) {
             const body = buf.toString("utf8");
-            /* manifest:rewrite các segment相对 thành URL tuyệt đối qua proxy của mình,
-               và LỌC BỎ các segment quảng cáo + cặp DISCONTINUITY bao quanh */
+            /* manifest: lọc bỏ các segment quảng cáo + cặp DISCONTINUITY bao quanh.
+               SEGMENT KHÔNG rewrite qua proxy — giữ nguyên URL tuyệt đối để player
+               tải THẲNG từ CDN nguồn (nhanh, không tốn băng thông Railway).
+               Quảng cáo đã bị lọc ở tầng manifest nên player không bao giờ tải phải. */
             const base = new URL(url);
             const lines = body.split(/\r?\n/);
             const out = [];
             let pendingDiscontinuities = 0;
-            let droppedSegments = 0;
             for (const line of lines) {
                 const t = line.trim();
                 if (!t) { continue; }
                 if (t.startsWith("#")) {
                     if (t === "#EXT-X-DISCONTINUITY") { pendingDiscontinuities++; continue; }
-                    /* các thẻ khác giữ nguyên (EXTM3U, VERSION, KEY, EXTINF...) */
-                    out.push(t);
+                    /* các thẻ khác giữ nguyên, URI trong tag (KEY/AUDIO/...) cũng phải tuyệt đối */
+                    out.push(t.replace(/URI="([^"]+)"/g, (m, u) => {
+                        try { return "URI=\"" + new URL(u, base).toString() + "\""; } catch { return m; }
+                    }));
                     continue;
                 }
                 /* dòng segment (.ts/.m3s/.mp4) */
                 const isAd = AD_SEGMENT_PATTERNS.some(p => p.test(t));
-                if (isAd) { droppedSegments++; pendingDiscontinuities = 0; continue; }
-                /* segment hợp lệ: rewrite thành URL tuyệt đối qua proxy,
-                   để player tải đúng (kể cả URI tương đối trong playlist con) */
-                let abs;
-                try { abs = new URL(t, base).toString(); } catch { abs = t; }
-                out.push("/api/stream?url=" + encodeURIComponent(abs));
+                if (isAd) { pendingDiscontinuities = 0; continue; }
+                /* segment hợp lệ: giữ nguyên dạng tuyệt đối -> player tải thẳng CDN */
+                try { out.push(new URL(t, base).toString()); } catch { out.push(t); }
             }
             /* dọn các DISCONTINUITY dư ở cuối */
             while (out.length && out[out.length - 1].startsWith("#EXT-X-DISCONTINUITY")) out.pop();
