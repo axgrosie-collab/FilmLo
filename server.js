@@ -70,7 +70,7 @@ app.get("/api/debug-nguonc", async (req, res) => {
             const txt = await r.text();
             let count = null;
             try { count = (JSON.parse(txt)?.items || []).length; } catch {}
-            results.push({ gateway: i, url: target.slice(0, 60), status: r.status, items: count, ms: Date.now() - t0 });
+            results.push({ gateway: i, url: target.slice(0, 60), status: r.status, items: count, ms: Date.now() - t0, body: txt.slice(0, 200) });
         } catch (e) {
             results.push({ gateway: i, url: target.slice(0, 60), error: e.message, ms: Date.now() - t0 });
         }
