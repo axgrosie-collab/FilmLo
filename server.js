@@ -165,6 +165,10 @@ function listRoute(path, buildUrl) {
             const q = { ...req.params, ...(req.query || {}) };
             const page = Math.max(1, Number(q.page) || 1);
             const data = await fetchJson(buildUrl({ ...q, page }));
+            /* khử trùng các bản giống nhau (cùng bộ phim, khác season/nguồn):
+               áp dụng cho MỌI endpoint danh sách -> grid không còn thẻ trùng */
+            if (Array.isArray(data?.items)) data.items = dedupeList(data.items);
+            if (Array.isArray(data?.data?.items)) data.data.items = dedupeList(data.data.items);
             res.set("Cache-Control", "public, max-age=300");
             res.json(data);
         } catch (error) {
@@ -181,7 +185,7 @@ app.get("/api/movies", async (req, res) => {
         const data = await fetchJson(
             `${API}/v1/api/danh-sach/phim-moi-cap-nhat?page=${page}&limit=20`
         );
-        const items = data?.items || data?.data?.items || [];
+        const items = dedupeList(data?.items || data?.data?.items || []);
         const paginate = data?.data?.paginate || data?.paginate || null;
         res.set("Cache-Control", "public, max-age=300");
         res.json({ items, paginate });
@@ -220,6 +224,59 @@ function dedupeKey(m) {
     return [norm(m.slug), a, b].filter(Boolean).join("|");
 }
 
+/* TÊN NỀN TẢNG (baseKey): bỏ mọi dấu hiệu phân mùa/phần để gộp các bản
+   "cùng một bộ phim" lại làm 1 thẻ. Ví dụ các tên sau đều -> "thanhguomdietquy":
+   - "Thanh Gươm Diệt Quỷ (Phần 1)"
+   - "Thanh Gươm Diệt Quỷ (Phần 1) (Kamado Academy...)"
+   - "Demon Slayer (Season 1)"
+   - "Kimetsu no Yaiba Season 2"
+   Cách làm: bỏ nội dung trong ngoặc, bỏ từ khóa mùa/phần, bỏ số đuôi,
+   bỏ các từ vô nghĩa (the, a) -> so khớp tên nền. */
+function baseKey(m) {
+    const pick = x => String(x || "").toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .replace(/\([^)]*\)/g, " ")                        // bỏ (Phần 1), (Season 2)...
+        .replace(/\b(phan|season|saison|temporada|part)\s*\d+\b/g, " ")
+        .replace(/\b(season|phan|part)\b/g, " ")
+        .replace(/\b\d+\b/g, " ")                          // bỏ số đuôi còn sót
+        .replace(/\b(the|a|an)\b/g, " ")
+        .replace(/[^a-z0-9]+/g, " ").trim();
+    const n = pick(m.name), o = pick(m.origin_name);
+    return n || o || pick(m.slug) || "";
+}
+
+/* GỌP DANH SÁCH: khử trùng 2 tầng
+   1) exact key (slug + tên gốc + tên) — bắt bản chính xác trùng lặp
+   2) baseKey (tên nền) — bắt cùng một bộ phim nhưng đặt tên khác nhau
+      (vd "Thanh Gươm Diệt Quỷ (Phần 1)" vs "Demon Slayer (Season 1)")
+   Ưu tiên giữ bản Nguonc (ảnh đẹp hơn); nếu cùng nguồn giữ bản đầu tiên. */
+function dedupeList(items) {
+    const byExact = new Map();   // exact key -> item
+    const byBase = new Map();    // baseKey  -> item
+    const out = [];
+    for (const m of items) {
+        if (!m) continue;
+        const s = m.slug || m.name;
+        if (!s) continue;
+        const ek = dedupeKey(m);
+        if (byExact.has(ek)) {
+            const prev = byExact.get(ek);
+            if (m._nguonc && !prev._nguonc) {
+                out[out.indexOf(prev)] = m;
+                byExact.set(ek, m);
+                byBase.set(baseKey(m), m);
+            }
+            continue;
+        }
+        const bk = baseKey(m);
+        if (bk && byBase.has(bk)) continue;   // cùng bộ phim (khác mùa/tên) -> bỏ
+        byExact.set(ek, m);
+        if (bk) byBase.set(bk, m);
+        out.push(m);
+    }
+    return out;
+}
+
 /* ---------- Tìm kiếm: GỘP 2 NGUỒN (KKPhim + Nguonc) ---------- */
 app.get("/api/search", async (req, res) => {
     try {
@@ -237,29 +294,13 @@ app.get("/api/search", async (req, res) => {
                 .catch(() => [])
         ]);
 
-        /* đan xen 2 nguồn rồi khử trùng: cùng 1 phim ở 2 nguồn (slug khác nhau
-           nhưng tên gốc trùng) chỉ giữ 1 bản — ưu tiên bản Nguonc (ảnh đẹp hơn) */
+        /* đan xen 2 nguồn rồi khử trùng: gộp các bản cùng bộ phim (kể cả khác tên/season) */
         const merged = [];
         for (let i = 0; i < Math.max(kk.length, ng.length); i++) {
             if (i < kk.length) merged.push(kk[i]);
             if (i < ng.length) merged.push(normalizeNguoncItem(ng[i]));
         }
-        const seen = new Map();
-        const items = [];
-        for (const m of merged) {
-            if (!m) continue;
-            const s = m.slug || m.name;
-            if (!s) continue;
-            const key = dedupeKey(m);
-            if (seen.has(key)) {
-                const prev = items[seen.get(key)];
-                if (m._nguonc && !prev._nguonc) items[seen.get(key)] = m;
-                continue;
-            }
-            seen.set(key, items.length);
-            items.push(m);
-        }
-        items.length = Math.min(items.length, limit);
+        const items = dedupeList(merged).slice(0, limit);
 
         res.set("Cache-Control", "public, max-age=300");
         res.json({
