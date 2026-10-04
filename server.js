@@ -54,24 +54,28 @@ app.get("/health", (req, res) => res.status(200).json({ ok: true }));
 
 /* Chẩn đoán nguồn 2: gateway đang dùng + env đã set chưa + thử gọi 1 request */
 app.get("/api/debug-nguonc", async (req, res) => {
-    try {
-        const t0 = Date.now();
-        let ok = false, err = null, count = null, gwUsed = null;
+    const t0 = Date.now();
+    const results = [];
+    for (let i = 0; i < NGUONC_GATEWAYS.length; i++) {
+        const url = `${NGUONC_ORIG}/films/phim-moi-cap-nhat?page=1`;
+        const target = NGUONC_GATEWAYS[i](url);
         try {
-            const d = await fetchJsonNguonc(`${NGUONC_ORIG}/films/phim-moi-cap-nhat?page=1`);
-            ok = true; count = (d?.items || []).length; gwUsed = nguoncGateway;
-        } catch (e) { err = e.message; gwUsed = nguoncGateway; }
-        res.json({
-            nguonc_proxy_env: process.env.NGUONC_PROXY || "(chưa set)",
-            gateway_index: gwUsed,
-            gateway_count: NGUONC_GATEWAYS.length,
-            gateway_names: NGUONC_GATEWAYS.map(f => {
-                const s = f("X_TEST_PATH_X");
-                return s === "X_TEST_PATH_X" ? "direct" : s.slice(0, 40);
-            }),
-            test_ok: ok, items: count, ms: Date.now() - t0, error: err
-        });
-    } catch (e) { res.status(500).json({ error: e.message }); }
+            const r = await fetch(target, {
+                headers: {
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
+                    "Accept": "application/json, text/plain, */*"
+                },
+                signal: AbortSignal.timeout(12000)
+            });
+            const txt = await r.text();
+            let count = null;
+            try { count = (JSON.parse(txt)?.items || []).length; } catch {}
+            results.push({ gateway: i, url: target.slice(0, 60), status: r.status, items: count, ms: Date.now() - t0 });
+        } catch (e) {
+            results.push({ gateway: i, url: target.slice(0, 60), error: e.message, ms: Date.now() - t0 });
+        }
+    }
+    res.json({ nguonc_proxy_env: process.env.NGUONC_PROXY || "(chưa set)", results });
 });
 
 /* ---------- Thá»‘ng kÃª tá»•ng sá»‘ phim (2 nguá»“n, trá»« trÃ¹ng theo slug) ----------
