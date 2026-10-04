@@ -194,9 +194,8 @@ const NGUONC_GATEWAYS = [
     (u) => u,                                                           // goi thang (nhanh nhat, local VN OK)
     ...(API2 ? [(u) => `${API2}${u.slice(NGUONC_ORIG.length)}`] : []),  // proxy rieng neu cau hinh
     (u) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
-    (u) => `https://cors.eu.org/${u}`,
-    /* r.jina.ai: render bằng trình duyệt thật -> qua được Cloudflare JS-challenge
-       mà Nguonc bật lên với IP data center. Trả JSON như thường. */
+    /* r.jina.ai: render bằng browser thật, qua được Cloudflare challenge
+       (worker/other proxy đều bị chặn "Just a moment..." từ Railway). */
     (u) => `https://r.jina.ai/${u}`,
     (u) => `https://corsproxy.io/?url=${encodeURIComponent(u)}`
 ];
